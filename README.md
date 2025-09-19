@@ -1,5 +1,5 @@
 # llm-docs
-A repo containing docs of web3 tools to use in AI editors
+A repo containing docs of web3 tools to use in AI IDEs
 
 ---
 ## How to use these files as documentation on cursor/ AI IDE:
