@@ -15,3 +15,5 @@ Some of these files contain the reference to the ai docs, other files contain th
 7.  Give docs a name, eg `react-native-paper-docs`
 8.  You can tag the docs `@react-native-paper-docs` when you want the ide to look into it.
 
+### If the file is just an .md
+just open it and follow the steps described there
