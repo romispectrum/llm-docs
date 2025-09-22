@@ -1,0 +1,2053 @@
+---
+title: Talent Protocol Full Documentation
+---
+
+# developers
+
+## api-pricing.mdx
+---
+---
+
+# API Pricing
+
+Different pricing tiers for the Talent API.
+
+| BUILDER                         | STARTUP                               | CUSTOM                                                             |
+| ------------------------------- | ------------------------------------- | ------------------------------------------------------------------ |
+| Basic API (rate-limited)        | Full API access                       | High-volume API access                                             |
+| \-                              | Priority support                      | Priority support                                                   |
+| \-                              | -                                     | Custom analytics                                                   |
+| \-                              | -                                     | Private endpoints                                                  |
+| Free: 1,000 API credits / month | Pay-as-you-go: $1 per 100 API Credits | [Contact us](mailto:contact@talentprotocol.com) for volume pricing |
+
+:::info
+
+1 Credit = 1 API Request.
+
+:::
+
+---
+
+## get-started.mdx
+---
+sidebar_position: 1
+pagination_prev: null
+---
+
+# Get Started
+
+How to get started using Talent Protocol's API
+
+## Reputation Infrastructure for Builders and Creators
+
+Talent Protocol helps builders and creators get rewarded by making their reputation more visible.
+
+We track builder activity across blockchains, GitHub, Twitter and other platforms, to calculate a [Builder Score](/docs/protocol-concepts/scoring-systems/builder-score) that helps ecosystems reward real contributors.
+
+With Talent Protocol:
+
+- **Builders** get rewarded for shipping real apps
+- **Creators** get rewarded for sharing engaging content
+- **Ecosystems** can reach and reward top builders and creators
+- and **Apps** can integrate verified reputation data with a single API call
+
+With over 11M+ accounts indexed and dozens of apps integrating our API, Talent Protocol is building the reputation layer for the new internet.
+
+## What Can You Build?
+
+- **Identity & Auth**: Add reputation-based context and authentication to your app.
+  - Examples: [Basenames](https://x.com/TalentProtocol/status/1825995151275434439) and [Etherscan](https://x.com/TalentProtocol/status/1830974248363622607)
+- **Search & Discovery**: Find top builders based on verified reputation data
+  - Examples: [Veew.ai](https://veew.ai/) and [Talent App](https://app.talentprotocol.com/search)
+- **Reputation Systems**: Create custom scoring systems using our data primitives.
+  - Example: [Moxie](https://build.moxie.xyz/the-moxie-protocol/based-rewards#breakdown-of-the-formula)
+
+## Quick Start
+
+1. Get your testing API key on our [app](https://app.talentprotocol.com/developers), or [contact us](https://tally.so/r/mYYjPJ) for a full access one.
+2. Explore our [API Reference](/docs/developers/talent-api/api-reference)
+3. Jump into specific guides:
+   - [Authentication](/docs/developers/talent-api/authentication)
+   - [Builder Score](/docs/developers/talent-api/api-reference/get-a-specific-score-using-wallet-scorer-slug-talent-id-or-account-identifier)
+   - [Credentials](/docs/developers/talent-api/api-reference/get-the-score-and-the-credentials-using-wallet-scorer-slug-talent-id-or-account-identifier)
+
+## Core Concepts
+
+Talent Protocol is built around the following core concepts to create a comprehensive reputation system:
+
+- [**Profile**](/docs/protocol-concepts/profile): The unified representation of a builder's identity and reputation data. A Profile can represent either a verified User or an independent Account.
+  - Users can have multiple connected Accounts feeding data into their Profile
+  - Independent Accounts have their own Profile until claimed by a User
+- [**User**](/docs/protocol-concepts/user): An individual who has signed up on one of our apps and verified their identity. Users can connect multiple Accounts.
+- [**Account**](/docs/protocol-concepts/account): A connection to a third-party data source (wallet, GitHub, X, etc.) that provides reputation data.
+- [**Data Point**](/docs/protocol-concepts/data-point): A specific verified fact about a builder (GitHub stars, wallet transactions, etc.).
+- [**Events**](/docs/protocol-concepts/event): Historical records of reputation changes
+- [**Score**](/docs/protocol-concepts/scoring-systems): A numerical measure of reputation calculated from Data Points using a specific Scoring System.
+
+## Support
+
+- Join our [Discord](https://discord.gg/talentprotocol) and [Farcaster](https://farcaster.xyz/~/channel/talent) for technical support
+- Follow [@TalentProtocol](https://twitter.com/TalentProtocol) for updates
+
+Ready to start building? Let's make great builders stand out together. 🫡
+
+---
+
+## smart-contracts.mdx
+# Smart Contracts
+
+## Talent Registry
+
+- An onchain record of Talent accounts created and the respective wallet address.
+- Contract: [https://basescan.org/address/0xb477A9BD2547ad61f4Ac22113172Dd909E5B2331](https://basescan.org/address/0xb477A9BD2547ad61f4Ac22113172Dd909E5B2331)
+
+## $TALENT Token
+
+- The utility token for Talent Protocol that incentivizes ecosystem participants to verify reputation data.
+- Contract: [https://basescan.org/token/0x9a33406165f562E16C3abD82fd1185482E01b49a](https://basescan.org/token/0x9a33406165f562E16C3abD82fd1185482E01b49a)
+
+## Builder Score Onchain
+
+- An onchain snapshot of the Builder Score of a given Talent ID and wallet address.
+- Contract: [https://basescan.org/address/0xBBFeDA7c4d8d9Df752542b03CdD715F790B32D0B](https://basescan.org/address/0xBBFeDA7c4d8d9Df752542b03CdD715F790B32D0B)
+- Developers can query the Builder Score of all user via the Talent API, but also access the Builder Score of Builder+ members onchain, via a custom contract.
+- **Example**: Base reads the onchain Builder Score smart contract to validate if a user has a Builder Score ≥ 50 in order to provide a discounted [Basename](https://www.base.org/names). This means that to qualify for a discount, user needs to have a Builder Score ≥ 50 and be a Builder+ member.
+
+  <figure style={{ textAlign: "center" }}>
+    <img
+      src="/img/basenames-onchain-integration-with-the-builder-score.png"
+      alt="Basenames onchain integration with the Builder Score"
+    />
+    <figcaption>
+      Basenames onchain integration with the Builder Score
+    </figcaption>
+  </figure>
+
+---
+
+## talent-api/api-reference/index.mdx
+# API Reference
+
+Technical specifications and usage examples for all endpoints in the Talent Protocol API.
+
+The Talent Protocol API provides comprehensive access to verified builder reputation data through a redesigned architecture that's more powerful and flexible than before.
+
+## Key Improvements
+
+- **Advanced Search**: Filter profiles by multiple criteria including tags, scores, and human verification status
+- **Profile-Centric Design**: Streamlined endpoints organized around Profiles as the central entity
+- **Multiple Scoring Systems**: Support for Builder Score and other upcoming scores
+- **Consistent Responses**: Standardized response formats across all endpoints
+- **Improved Pagination**: Options for both page-based and cursor-based pagination
+
+## Getting Started
+
+All API endpoints require authentication using your API key in the `X-API-KEY` header.
+
+Base URL: `https://api.talentprotocol.com/`
+
+### Core Endpoints
+
+- [**Profile Search**](/docs/developers/talent-api/api-reference/search-for-profiles): `/search/advanced/profiles` - Find profiles matching specific criteria
+- [**Profile Data**](/docs/developers/talent-api/api-reference/get-a-profile-using-wallet-talent-id-or-account-identifier): `/profile` - Get profile information by ID or account identifier
+- [**Score Data**](/docs/developers/talent-api/api-reference/get-a-specific-score-using-wallet-scorer-slug-talent-id-or-account-identifier): `/score` - Get Builder Score and other scoring information
+- [**Farcaster Scores**](/docs/developers/talent-api/api-reference/get-the-score-of-farcaster-accounts): `/farcaster/scores` - Get the Builder Score of Farcaster users
+- [**Credentials Data**](/docs/developers/talent-api/api-reference/get-the-score-and-the-credentials-using-wallet-scorer-slug-talent-id-or-account-identifier): `/credentials` - Get the points each data point contributed to the Builder Score
+- [**Data Points**](/docs/data-points): `/data_points` - Get the data points providing a list of slugs and for a Talent profile
+- [**Account Data**](/docs/developers/talent-api/api-reference/get-account-using-wallet-talent-id-or-account-identifier): `/accounts` - Get connected accounts information
+- [**Social Data**](/docs/developers/talent-api/api-reference/get-socials-using-wallet-talent-id-or-account-identifier): `/socials` - Get connected social media information
+- [**Projects**](/docs/developers/talent-api/api-reference/get-projects-created-by-the-talent-profile): `/projects` - Get projects created by ID or account identifier
+
+See the individual endpoint documentation for detailed request and response formats.
+
+---
+
+## talent-api/authentication.mdx
+---
+sidebar_position: 1
+---
+
+# Authentication
+
+## X-API-KEY
+
+The API key is the entry point for the Talent Protocol API. In order to perform requests it needs to be passed on every request.
+
+We use the header `X-API-KEY` to retrieve the access key and validate your access to our API.
+
+There're two types of API keys:
+
+- `read_only`: Can only access GET requests
+- `write`: Can access all requests
+
+## How to request an API key
+
+You can request one API key by opening a ticket on [Discord](https://discord.com/invite/talentprotocol).
+
+---
+
+## talent-api/index.mdx
+---
+sidebar_label: Talent API
+sidebar_position: 2
+slug: /developers/talent-api
+---
+
+# Talent API
+
+Integrate the Builder Score to help great builders stand out in your app.
+
+Access verified reputation data to identify and engage with real builders in your app.
+
+Our API provides Builder Scores, identity verification, and hundreds of other [data points](/docs/data-points)
+through simple, reliable endpoints.
+
+---
+
+## talent-api/pagination.mdx
+---
+---
+
+# Pagination
+
+Talent API Pagination is applicable only to `/search/advanced/profiles` endpoint. Please, visit the corresponding endpoint documentation for more details about pagination.
+
+---
+
+## talent-api/rate-limits.mdx
+---
+---
+
+# Rate Limits
+
+Talent API is protected by two rate-limiting processes.
+
+## API Key Rate Limits
+
+- For free users, API usage is subject to 5,000 requests/month.
+
+- Check more details about pricing [here](/docs/developers/api-pricing).
+
+## IP Rate Limits
+
+- Each IP address has a maximum of 25 requests in 10 seconds.
+
+## Fair Use Policy
+
+The following activities are prohibited:
+
+- **Excessive Use**: Overuse of the API beyond the designated limits that impacts system performance or fairness for other users.
+- **Automated Abuse**: Using scripts, bots, or automated tools to excessively query the API, harvest data, or engage in any behavior that could overload our systems.
+- **Redistribution**: Reselling, sublicensing, or sharing your API Key with unauthorized third parties is strictly prohibited.
+- **Data Misuse**: Manipulating, distorting, or misrepresenting the data obtained from our API, or using the data for illegal purposes.
+
+## Inactivity Clause
+
+- We reserve the right to **deactivate or cancel an API Key** if it has been inactive for more than **30 consecutive days**. Inactivity is defined as **no API requests** made during this period. If your API Key is deactivated due to inactivity, you may need to request a new key or contact support for reinstatement.
+
+---
+
+# legal
+
+## builder-rewards-faq-walletconnect.mdx
+---
+sidebar_position: 8
+---
+
+# Builder Rewards with WalletConnect FAQ
+
+Last Updated: Sep 16, 2025
+
+**Quick Start Guide**
+1. Get a [Basename](https://www.base.org/names)
+2. Reach a [Talent Protocol Builder Score of 40+](https://app.talentprotocol.com)
+3. Connect the email you used to register for WalletConnect to [your Talent Protocol profile](https://app.talentprotocol.com/accounts)
+4. Integrate a [WalletConnect package (Web, iOS, Android, Flutter, React Native, or .NET) in your app](https://docs.reown.com/walletkit/overview)
+5. Check your eligibility and leaderboard rank on the [WalletConnect Builder Rewards Mini App](https://walletconnect.builderscore.xyz) (updated daily)
+
+**What are WalletConnect Builder Rewards?**
+
+WalletConnect Builder Rewards is a program by WalletConnect in partnership with Talent Protocol that rewards builders on Base who integrate WalletConnect, contribute to crypto projects, and grow their Builder Score. The program distributes 1,000,000 $WCT tokens to top builders through weekly distributions.
+    
+**When does the program run?**
+- Launch date: September 23, 2025
+- First Distribution: September 23, 2025
+- Weekly Distributions: Starting from September 30, 2025
+- Duration of Weekly Distributions: 10 Weeks
+- Campaign end: December 2, 2025
+
+**Who can participate?**
+- WalletConnect Builder Rewards is built to reward Base builders that integrate WalletConnect into their projects.
+- You must [Own a Basename](https://www.base.org/names) and [Have a Talent Protocol Builder Score of 40+](https://app.talentprotocol.com/profile)
+
+**How can I increase my rewards**
+- [Connect the email you used to register for WalletConnect to your Talent profile](https://app.talentprotocol.com/accounts)
+- [Integrate WalletConnect packages](https://docs.reown.com/walletkit/overview) (Web, iOS, Android, Flutter, React Native, .NET) in your project
+- Engage in GitHub and Onchain activity (tracked by Talent Protocol)
+
+**How many tokens are distributed?**
+- Total pool: 1,000,000 $WCT
+- First distribution (Sep 23): 250,000 $WCT → Top 200 builders since January 1 2025
+- Weekly distributions (Sep 30 – Nov 11): 75,000 $WCT / week → Top 100 weekly builders
+
+**How are rewards calculated**
+- GitHub activity
+- WalletConnect usage
+- Onchain activity on Base mainnet
+
+**How do I receive rewards?**
+- Rewards are sent by Talent Protocol
+- Tokens are distributed in this order:
+  1. To your primary Farcaster wallet
+  2. If not set, to the first wallet connected to your Talent Protocol profile
+
+**Where can I check my eligibility and rewards?**
+- [WalletConnect Builder Rewards Mini App](https://walletconnect.builderscore.xyz/)
+- [Farcaster Mini App](https://farcaster.xyz/miniapps/7qaOrCWp8Z3U/walletconnect-builder-rewards)
+
+**Which WalletConnect packages are tracked?**
+- WalletKit and AppKit integrations for Web, iOS, Android, Flutter, React Native, and .NET.
+    
+**Where can I get support?**
+- WalletConnect handles first-level support for simple questions such as:
+  - How do I participate?
+  - How many tokens are distributed?
+  - When do distributions happen?
+  - Am I eligible?
+    
+- For Leaderboard issues (e.g. “I’m eligible but not showing up”), missing or incorrect rewards and technical or data-related bugs, please join the [Talent Protocol Discord](https://discord.com/invite/talentprotocol) and open a support ticket.
+    
+**Is there a Terms & Conditions page?**
+- Yes. Please visit [Terms and Conditions](https://docs.talentprotocol.com/docs/legal/builder-rewards-terms-conditions-walletconnect).
+
+---
+
+## builder-rewards-terms-conditions-celo.mdx
+---
+sidebar_position: 4
+---
+
+# Builder Rewards with Celo T&C
+
+Terms and Conditions for the Builder Rewards program sponsored by Celo, and operated by Talent Protocol.
+
+Last Updated: Jul 2, 2025
+
+These Terms and Conditions ("Terms") govern your participation in the Builder Rewards program ("Program"), sponsored by Celo and powered by Talent Protocol (Reputation DAO LLC).
+
+By participating in the Program, you (i) agree to be bound by these Terms and (ii) represent and warrant you meet all eligibility requirements. Failure to comply with these Terms or meet all eligibility requirements will result in your disqualification of the Program.
+
+## 1. Program Overview
+
+The Program automatically distributes rewards to eligible builders in the Celo ecosystem based on their verified onchain and open-source contributions. The Program will distribute 10,000 CELO monthly beginning on May 2025.
+
+## 2. Eligibility
+
+To be eligible for the Program, you must:
+
+a) Have earned a Human Checkmark verification on Talent Protocol;
+
+b) Have at least one outgoing transaction on Celo (all time);
+
+c) Not have a wallet address on the OFAC Specially Designated Nationals (SDN) list;
+
+d) Not be the target of any applicable sanctions laws or owned or controlled by someone that is the subject of sanctions laws, including those enforced by the Office of Foreign Assets Control (OFAC) and the U.S. Department of Commerce; and
+
+e) Be in compliance with all applicable laws, rules, and regulations, including all applicable anti-money laundering and counter terrorist financing rules and regulations.
+
+## 3. Program Period
+
+The Program begins on May 1, 2025. Rewards of the first month (May 2025) are distributed on the June 2, 2025 at 12pm UTC. Monthly rewards reset on the first day of each month at 12:00 PM UTC.
+
+## 4. Reward Structure
+
+Monthly rewards are distributed across three tiers:
+
+a) Tier 1: Top 10 builders share 50% of the reward pool, proportionally to their activity and impact.
+
+b) Tier 2: Next 25 builders share 25% of the reward pool, proportionally to their activity and impact.
+
+c) Tier 3: Next 65 builders share 25% of the reward pool, proportionally to their activity and impact.
+
+## 5. Evaluation Criteria
+
+Your ranking and rewards are determined by three separate factors:
+
+a) Activity on verified contracts deployed on Celo during that month.
+
+b) Contributions to public crypto repositories during that month.
+
+c) Builder Score on the day of the calculation.
+
+The specific weights and formulas used to calculate rankings are proprietary and subject to change at the sole discretion of Talent Protocol.
+
+## 6. Reward Distribution
+
+Rewards are distributed automatically to eligible participants. No application or claim process is required. You must maintain an EVM compatible address for reward distribution. If you do not meet the eligibility criteria at the time of reward distribution, you will forfeit your right to the reward. Earned rewards cannot be carried over to a later time.
+
+## 7. Taxes
+
+Recipients are solely responsible for any taxes associated with rewards received through the Program. Neither Celo nor Talent Protocol will withhold any taxes or provide tax advice. Recipients should consult with their tax advisors regarding the tax implications of receiving rewards.
+
+## 8. Compliance Measures
+
+For compliance with applicable sanctions regulations:
+
+a) Automatic OFAC screening will be performed on all wallet addresses associated with Program participants;
+
+b) The Human Checkmark verification process helps ensure participants are real individuals, not automated programs or fraudulent accounts;
+
+c) Program administrators reserve the right to request additional verification if deemed necessary for compliance purposes before any reward distribution.
+
+## 9. Prohibited Activities
+
+The following activities are strictly prohibited:
+
+a) Creating multiple accounts to increase chances of receiving rewards;
+
+b) Using automated tools, bots, or other technical measures to artificially inflate activity metrics;
+
+c) Submitting false or misleading information;
+
+d) Engaging in any activity designed to manipulate the Builder Score or other evaluation metrics;
+
+f) Activities that violate applicable laws, including (i) all applicable sanctions laws and regulations, including those enforced by the Office of Foreign Assets Control (OFAC) and the U.S. Department of Commerce and (ii) all applicable anti-money laundering and counter terrorist financing rules and regulations; and
+
+e) Any other activity that violates the spirit of the Program as determined by Program administrators.
+
+## 10. Modifications to the Program
+
+Celo and Talent Protocol reserve the right, at their sole discretion, to modify, suspend, or terminate the Program or these Terms at any time and for any reason without prior notice. This includes, but is not limited to, changing eligibility criteria, reward structure, evaluation criteria, or Program duration.
+
+## 11. Privacy
+
+Participation in the Program requires the collection of certain personal information and onchain data. By participating in the Program, you consent to the collection, use, and processing of this information by Celo and Talent Protocol in accordance with their respective Privacy Policies.
+
+## 12. License to Use Content
+
+By participating in the Program, you grant Celo and Talent Protocol a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, publish, and display your name, and information about your contributions for promotional and marketing purposes related to the Program.
+
+## 13. Release
+
+By participating in the Program, you agree to release and hold harmless Talent Protocol, Celo, or any of their parents, affiliates, subsidiaries, promotion agencies, sponsors,, and each of their respective directors, officers, employees, and assigns, (collectively, the “Released Parties”) from any claims or liabilities arising from participation in the Program or use/misuse of any rewards. This includes, but is not limited to, claims related to personal injury, property damage, or reputational harm.
+
+## 14. Limitation of Liability
+
+IN NO EVENT WILL THE RELEASED PARTIES BE LIABLE TO YOU FOR ANY DIRECT, SPECIAL, INCIDENTAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES (INCLUDING LOSS OF USE, DATA, BUSINESS OR PROFITS) ARISING OUT OF OR IN CONNECTION WITH YOUR PARTICIPATION IN THE CONTEST, WHETHER SUCH LIABILITY ARISES FROM ANY CLAIM BASED UPON CONTRACT, WARRANTY, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY OR OTHERWISE, AND WHETHER OR NOT THE RELEASED PARTIES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH LOSS OR DAMAGE.
+
+## 15. Disclaimers
+
+The program is provided "as is" and "as available" without warranties of any kind, either express or implied, including, but not limited to, implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+## 16. Governing Law
+
+These Terms and Conditions shall be governed by and construed in accordance with the laws of the Republic of the Marshall Islands, without regard to its conflict of law provisions. By participating in the Builder Rewards program, you agree that any dispute arising out of or relating to these Terms shall be subject to the exclusive jurisdiction of the courts of the Republic of the Marshall Islands. If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+## 17. Severability
+
+If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+## 18. Entire Agreement
+
+These Terms constitute the entire agreement between you and the Program administrators regarding the Program and supersede all prior agreements and understandings, whether written or oral.
+
+## 19. Contact Information
+
+For questions about the Program or these Terms, please contact contact@talentprotocol.com.
+
+---
+
+By participating in the Builder Rewards program, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
+
+---
+
+## builder-rewards-terms-conditions-walletconnect.mdx
+---
+sidebar_position: 7
+---
+
+# Builder Rewards with WalletConnect T&C
+
+Terms and Conditions for the Builder Rewards program sponsored by WalletConnect, and operated by Talent Protocol.
+
+Last Updated: Sep 16, 2025
+
+These Terms and Conditions ("Terms") govern your participation in the Builder Rewards program ("Program"), sponsored by WalletConnect and powered by Talent Protocol (Reputation DAO LLC).
+
+By participating in the Program, you (i) agree to be bound by these Terms and (ii) represent and warrant you meet all eligibility requirements. Failure to comply with these Terms or meet all eligibility requirements will result in your disqualification of the Program.
+
+## 1. Program Overview
+
+The Program automatically distributes rewards to eligible Base builders that integrate WalletConnect into their projects based on their verified onchain and open-source contributions. The Program will distribute 1,000,000 $WCT tokens beginning on Sep 23, 2025.
+
+## 2. Eligibility
+
+To be eligible for the Program, you must:
+
+1. Have a Basename (your onchain identity on Base);
+2. Have a Builder Score of at least 40;
+3. Not have a wallet address on the OFAC Specially Designated Nationals (SDN) list;
+4. Not be the target of any applicable sanctions laws or owned or controlled by someone that is the subject of sanctions laws, including those enforced by the Office of Foreign Assets Control (OFAC) and the U.S. Department of Commerce; and
+5. Be in compliance with all applicable laws, rules, and regulations, including all applicable anti-money laundering and counter terrorist financing rules and regulations.
+
+## 3. Program Period
+
+The Program begins on Sep 23, 2025 with the first distribution.
+
+**First Distribution**
+
+- 250,000 $WCT will be distributed to Top 200 builders based on their activity since Jan 1, 2025.
+
+**Weekly Distributions**
+
+- 75,000 $WCT will be distributed weekly to Top 100 weekly builders starting from Sep 30, 2025.
+- The program will end on Dec 2, 2025 after 10 weekly distributions.
+- Weekly  rewards reset on each Tuesday at 12:00 PM UTC.
+
+## 4. Reward Structure
+
+**First Distribution:**
+
+- Rewards will be distributed proportionally to the Top 200 builders.
+
+**Weekly rewards are distributed across three tiers:**
+
+1. Tier 1: Top 10 builders share 50% of the reward pool, proportionally to their activity and impact.
+2. Tier 2: Next 25 builders share 25% of the reward pool, proportionally to their activity and impact.
+3. Tier 3: Next 65 builders share 25% of the reward pool, proportionally to their activity and impact.
+
+## 5. Evaluation Criteria
+
+Your ranking and rewards are determined by three separate factors:
+
+1. Usage of WalletConnect and WalletConnect packages on that week
+2. Verified contributions to public crypto repositories on that week
+3. Activity on verified contracts you've deployed on Base on that week
+
+The specific weights and formulas used to calculate rankings are proprietary and subject to change at the sole discretion of Talent Protocol.
+
+## 6. Reward Distribution
+
+Rewards are distributed automatically to eligible participants. No application or claim process is required. You must maintain an EVM compatible address for reward distribution. If you do not meet the eligibility criteria at the time of reward distribution, you will forfeit your right to the reward. Earned rewards cannot be carried over to a later time.
+
+## 7. Taxes
+
+Recipients are solely responsible for any taxes associated with rewards received through the Program. Neither WalletConnect nor Talent Protocol will withhold any taxes or provide tax advice. Recipients should consult with their tax advisors regarding the tax implications of receiving rewards.
+
+## 8. Compliance Measures
+
+For compliance with applicable sanctions regulations:
+
+1. Automatic OFAC screening will be performed on all wallet addresses associated with Program participants;
+2. Program administrators reserve the right to request additional verification if deemed necessary for compliance purposes before any reward distribution.
+
+## 9. Prohibited Activities
+
+The following activities are strictly prohibited:
+
+1. Creating multiple accounts to increase chances of receiving rewards;
+2. Using automated tools, bots, or other technical measures to artificially inflate activity metrics;
+3. Submitting false or misleading information;
+4. Engaging in any activity designed to manipulate the Builder Score or other evaluation metrics;
+5. Activities that violate applicable laws, including (i) all applicable sanctions laws and regulations, including those enforced by the Office of Foreign Assets Control (OFAC) and the U.S. Department of Commerce and (ii) all applicable anti-money laundering and counter terrorist financing rules and regulations; and
+6. Any other activity that violates the spirit of the Program as determined by Program administrators.
+
+## 10. Modifications to the Program
+
+WalletConnect and Talent Protocol reserve the right, at their sole discretion, to modify, suspend, or terminate the Program or these Terms at any time and for any reason without prior notice. This includes, but is not limited to, changing eligibility criteria, reward structure, evaluation criteria, or Program duration.
+
+## 11. Privacy
+
+Participation in the Program requires the collection of certain personal information and onchain data. By participating in the Program, you consent to the collection, use, and processing of this information by WalletConnect and Talent Protocol in accordance with their respective Privacy Policies.
+
+## 12. License to Use Content
+
+By participating in the Program, you grant WalletConnect and Talent Protocol a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, publish, and display your name, and information about your contributions for promotional and marketing purposes related to the Program.
+
+## 13. Release
+
+By participating in the Program, you agree to release and hold harmless Talent Protocol, WalletConnect, or any of their parents, affiliates, subsidiaries, promotion agencies, sponsors,, and each of their respective directors, officers, employees, and assigns, (collectively, the “Released Parties”) from any claims or liabilities arising from participation in the Program or use/misuse of any rewards. This includes, but is not limited to, claims related to personal injury, property damage, or reputational harm.
+
+## 14. Limitation of Liability
+
+IN NO EVENT WILL THE RELEASED PARTIES BE LIABLE TO YOU FOR ANY DIRECT, SPECIAL, INCIDENTAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES (INCLUDING LOSS OF USE, DATA, BUSINESS OR PROFITS) ARISING OUT OF OR IN CONNECTION WITH YOUR PARTICIPATION IN THE CONTEST, WHETHER SUCH LIABILITY ARISES FROM ANY CLAIM BASED UPON CONTRACT, WARRANTY, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY OR OTHERWISE, AND WHETHER OR NOT THE RELEASED PARTIES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH LOSS OR DAMAGE.
+
+## 15. Disclaimers
+
+The program is provided "as is" and "as available" without warranties of any kind, either express or implied, including, but not limited to, implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+## 16. Governing Law
+
+These Terms and Conditions shall be governed by and construed in accordance with the laws of the Republic of the Marshall Islands, without regard to its conflict of law provisions. By participating in the Builder Rewards program, you agree that any dispute arising out of or relating to these Terms shall be subject to the exclusive jurisdiction of the courts of the Republic of the Marshall Islands. If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+## 17. Severability
+
+If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+## 18. Entire Agreement
+
+These Terms constitute the entire agreement between you and the Program administrators regarding the Program and supersede all prior agreements and understandings, whether written or oral.
+
+## 19. Contact Information
+
+For questions about the Program or these Terms, please contact [contact@talentprotocol.com](mailto:contact@talentprotocol.com).
+
+---
+
+By participating in the Builder Rewards program, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
+
+---
+
+## builder-rewards-terms-conditions.mdx
+---
+sidebar_position: 3
+---
+
+# Builder Rewards T&C
+
+Terms and Conditions for the Builder Rewards program sponsored by Base, and operated by Talent Protocol.
+
+Last Updated: July 24, 2025
+
+These Terms and Conditions ("Terms") govern your participation in the Builder Rewards program ("Program"), sponsored by Base (Coinbase Technologies, Inc.) and powered by Talent Protocol (Reputation DAO LLC).
+
+By participating in the Program, you (i) agree to be bound by these Terms and (ii) represent and warrant you meet all eligibility requirements. Failure to comply with these Terms or meet all eligibility requirements will result in your disqualification of the Program.
+
+## 1. Program Overview
+
+The Program automatically distributes rewards to eligible builders in the Base ecosystem based on their verified onchain and open-source contributions. The Program will distribute 2 ETH weekly beginning on March 31, 2025.
+
+## 2. Eligibility
+
+To be eligible for the Program, you must:
+
+a) Have a Basename (your onchain identity on Base);
+
+b) Have a Builder Score of at least 40;
+
+e) Not have a wallet address on the OFAC Specially Designated Nationals (SDN) list;
+
+f) Not be the target of any applicable sanctions laws or owned or controlled by someone that is the subject of sanctions laws, including those enforced by the Office of Foreign Assets Control (OFAC) and the U.S. Department of Commerce; and
+
+g) Be in compliance with all applicable laws, rules, and regulations, including all applicable anti-money laundering and counter terrorist financing rules and regulations.
+
+## 3. Program Period
+
+The Program begins on March 31, 2025. Weekly rewards reset every Monday at 12pm UTC.
+
+## 4. Reward Structure
+
+Weekly rewards are distributed across three tiers:
+
+a) Tier 1: Top 10 builders share 50% of the reward pool, proportionally to their activity and impact.
+
+b) Tier 2: Next 25 builders share 25% of the reward pool, proportionally to their activity and impact.
+
+c) Tier 3: Next 65 builders share 25% of the reward pool, proportionally to their activity and impact.
+
+## 5. Evaluation Criteria
+
+Your weekly ranking and rewards are determined by three separate factors:
+
+a) Verified contributions to public crypto repositories on that week
+
+b) Activity on verified contracts you've deployed on Base on that week
+
+c) Earned Farcaster Mini App rewards on that week
+
+The specific weights and formulas used to calculate rankings are proprietary and subject to change at the sole discretion of Talent Protocol.
+
+## 6. Reward Distribution
+
+Rewards are distributed automatically to eligible participants. No application or claim process is required. You must maintain a valid Basename and ETH address for reward distribution. If you do not meet the eligibility criteria at the time of reward distribution, you will forfeit your right to the reward. Earned rewards cannot be carried over to subsequent weeks. All rewards are distributed in ETH.
+
+## 7. Taxes
+
+Recipients are solely responsible for any taxes associated with rewards received through the Program. Neither Base nor Talent Protocol will withhold any taxes or provide tax advice. Recipients should consult with their tax advisors regarding the tax implications of receiving rewards.
+
+## 8. Compliance Measures
+
+For compliance with applicable sanctions regulations:
+
+a) Automatic OFAC screening will be performed on all wallet addresses associated with Program participants;
+
+b) Program administrators reserve the right to request additional verification if deemed necessary for compliance purposes before any reward distribution.
+
+## 9. Prohibited Activities
+
+The following activities are strictly prohibited:
+
+a) Creating multiple accounts to increase chances of receiving rewards;
+
+b) Using automated tools, bots, or other technical measures to artificially inflate activity metrics;
+
+c) Submitting false or misleading information;
+
+d) Engaging in any activity designed to manipulate the Builder Score or other evaluation metrics;
+
+f) Activities that violate applicable laws, including (i) all applicable sanctions laws and regulations, including those enforced by the Office of Foreign Assets Control (OFAC) and the U.S. Department of Commerce and (ii) all applicable anti-money laundering and counter terrorist financing rules and regulations; and
+
+e) Any other activity that violates the spirit of the Program as determined by Program administrators.
+
+## 10. Modifications to the Program
+
+Base and Talent Protocol reserve the right, at their sole discretion, to modify, suspend, or terminate the Program or these Terms at any time and for any reason without prior notice. This includes, but is not limited to, changing eligibility criteria, reward structure, evaluation criteria, or Program duration.
+
+## 11. Privacy
+
+Participation in the Program requires the collection of certain personal information and onchain data. By participating in the Program, you consent to the collection, use, and processing of this information by Base and Talent Protocol in accordance with their respective Privacy Policies.
+
+## 12. License to Use Content
+
+By participating in the Program, you grant Base and Talent Protocol a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, publish, and display your name, Basename, and information about your contributions for promotional and marketing purposes related to the Program.
+
+## 13. Release
+
+By participating in the Program, you agree to release and hold harmless Talent Protocol, Base, Coinbase, Inc. or any of their parents, affiliates, subsidiaries, promotion agencies, sponsors,, and each of their respective directors, officers, employees, and assigns, (collectively, the “Released Parties”) from any claims or liabilities arising from participation in the Program or use/misuse of any rewards. This includes, but is not limited to, claims related to personal injury, property damage, or reputational harm.
+
+## 14. Limitation of Liability
+
+IN NO EVENT WILL THE RELEASED PARTIES BE LIABLE TO YOU FOR ANY DIRECT, SPECIAL, INCIDENTAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES (INCLUDING LOSS OF USE, DATA, BUSINESS OR PROFITS) ARISING OUT OF OR IN CONNECTION WITH YOUR PARTICIPATION IN THE CONTEST, WHETHER SUCH LIABILITY ARISES FROM ANY CLAIM BASED UPON CONTRACT, WARRANTY, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY OR OTHERWISE, AND WHETHER OR NOT THE RELEASED PARTIES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH LOSS OR DAMAGE.
+
+## 15. Disclaimers
+
+The program is provided "as is" and "as available" without warranties of any kind, either express or implied, including, but not limited to, implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+## 16. Governing Law
+
+These Terms and Conditions shall be governed by and construed in accordance with the laws of the Republic of the Marshall Islands, without regard to its conflict of law provisions. By participating in the Builder Rewards program, you agree that any dispute arising out of or relating to these Terms shall be subject to the exclusive jurisdiction of the courts of the Republic of the Marshall Islands. If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+## 17. Severability
+
+If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+## 18. Entire Agreement
+
+These Terms constitute the entire agreement between you and the Program administrators regarding the Program and supersede all prior agreements and understandings, whether written or oral.
+
+## 19. Contact Information
+
+For questions about the Program or these Terms, please contact contact@talentprotocol.com.
+
+---
+
+By participating in the Builder Rewards program, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
+
+---
+
+## builder-score-app-t-and-c.mdx
+---
+sidebar_position: 5
+---
+
+# Builder Score App T&C
+
+These Terms and Conditions apply to all consumer-facing applications developed by Talent Protocol (Reputation DAO LLC), including but not limited to Builder Score.
+
+Last Updated: April 24, 2025.
+
+## Introduction
+
+This platform’s terms and conditions (“**Terms**”) between the user (“**you**”) and Reputation DAO LLC, registry code 10070-24, address 852, Long Island Rd, Majuro, 96960, Marshall Islands ("**Talent Protocol**", “**we**”, “**us**”, ”**our**”) set out the terms for the provision of the Platform (as defined below) from such time as you register and set up an account with us.
+
+It is important that you read and understand the Terms before using the Platform. By using and accessing the Platform, you agree to these Terms. If you do not agree to these Terms, please do not use the Platform.
+
+By signing up to use any service through the Platform or any of our associated websites, you agree that you have read, understood, and accept all of the Terms and you have familiarized yourself with our [Privacy Policy](/docs/legal/privacy-notice). By using the Platform, you agree to be bound by the Terms. This Agreement will come into effect when you confirm that you agree to it.
+
+IF YOU DO NOT AGREE TO THE TERMS OF THIS AGREEMENT, YOU MAY NOT USE THE PLATFORM.
+
+This Agreement is not a solicitation for investment and does not represent in any way an offering of securities in any jurisdiction.
+
+## Description of Platform and Services
+
+Talent Protocol provides the following services ("**Services**") through [https://www.builderscore.xyz/](https://www.builderscore.xyz/), [https://www.talentprotocol.com/](https://www.talentprotocol.com/), and the [https://app.talentprotocol.com/](https://app.talentprotocol.com/).
+
+**Builder Score & Profile Service:** Builder Score combines reputation data from GitHub, blockchains, and hundreds of other data points to generate a comprehensive builder profile, enabling 10x more accurate skill verification. Builders can showcase their achievements, gain recognition, and earn rewards through their verified profile.
+
+**Talent Discovery (Search):** Our platform allows anyone to search for and identify high-potential builders. Ecosystems and projects can use this tool to facilitate targeted incentive programs, optimize grant allocation, and refine community growth strategies.
+
+## User Accounts and Privacy
+
+Users are required to create an account to access Talent Protocol’s Services. Users are responsible for maintaining the confidentiality of their account information, including their password. Users agree to notify Talent Protocol immediately of any unauthorized use of their account. By creating an account, users agree to provide accurate and complete information. Users' Personal Data will be handled in accordance with Talent Protocol’s [Privacy Policy](/docs/legal/privacy-notice).
+
+Users agree not to use the Services for any illegal or harmful purposes, or to violate any applicable laws or regulations. Users also agree not to engage in any activity that interferes with or disrupts the services or the servers and networks connected to the Services.
+
+## Eligibility
+
+To be eligible to use the Platform, you must:
+
+- register and set up an account;
+- be at least 18 years old and have the capacity to enter into legally binding contracts or be at least 13 years old and have the necessary parental consent;
+- reside in a country in which the relevant services and products are available.
+
+## Licence
+
+For the duration of this Terms, we grant you a worldwide, non-exclusive, non-transferable, royalty-free license to the extent necessary to use the Platform. You agree to grant us a perpetual, non-exclusive, worldwide, royalty-free, sublicensable, assignable and transferable license to any content submitted via the Platform for any act restricted by any intellectual property right (including copyright) for any purpose reasonably related to the provision and operation of the Platform. Such acts include the right to reproduce, make available and communicate to the public, display, perform, distribute, translate, and create adaptations or derivative works of your content. Furthermore, you allow us to use and, to the fullest extent, release your intellectual property rights to any feedback, reports, suggestions, or comments submitted via the Platform for the purposes of improving the Platform and the services provided by us. We owe you no remuneration for the use of such intellectual property.
+
+## **Changes to these Terms**
+
+We reserves the right, at our sole discretion, to amend these Terms at any time and will update these Terms in the event of any such amendments. By continuing to access or use the Platform, you confirm your acceptance of the revised Terms and all of the conditions incorporated therein by reference. We encourage you to review the Terms frequently to ensure that you understand the conditions that apply when you access or use the Platform. If you do not agree to the revised Terms, you may not access or use the Platform.
+
+We may make all other amendments to the Terms by posting the revised Terms (Agreement) on the Platform, indicating when the revised Terms become effective. Although we will endeavor to provide you with advance notice where possible, where lawful we may indicate that the revised Terms shall be effective immediately and if you do not agree with any such modification, you should close your account and cease using the Platform.
+
+## **Data protection**
+
+We shall ensure the protection of your data, including your personal data, and the use of the data in line with the procedure prescribed by the terms of the [Privacy Policy](/docs/legal/privacy-notice) available on the Platform.
+
+## **Liability**
+
+This clause sets out the entire financial liability for any acts, representations, misrepresentations, omissions or tortious acts committed by us, our employees, agents and subcontractors with respect to and arising from this Terms.
+
+All warranties, representations, conditions and all other terms of any kind whatsoever implied by statute or common law are excluded from these Terms to the fullest extent permitted by applicable law.
+
+The information services are provided on an “as is” and “as available” basis without warranties of any kind. We disclaim all warranties, including warranties of non-infringement, marketability and fitness for a particular purpose. We shall not be liable for any pecuniary damages, loss of profits, cost of substitute goods or services, loss of data, loss of goodwill, work stoppage, computer and/or device or technology failure or malfunction, or for any form of direct or indirect damages, legal action whatsoever related to any digital asset of any kind, any technology used by us or related parties, including applicable blockchain(s). You accept the inherent security risks of providing information and dealing online over the internet and agree that we have no liability or responsibility for any breach of security unless it is due to our gross negligence. If applicable law does not allow all or any part of the above limitation of liability to apply to you, the limitations will apply to you only to the extent permitted by applicable law.
+
+You agree that this limitation of liability is applicable to any event, to the maximum extent permitted by applicable law.
+
+## **Warranties and representations**
+
+We warrant, represent and undertake that we shall provide the services with reasonable care and skill.
+
+**THE PLATFORM IS AN INFORMATION SERVICE. WE ARE NOT A BROKER, FINANCIAL INSTITUTION, EXCHANGE, OR CREDITOR.**
+
+We make no representation or warranty that the services are applicable or appropriate for use by customers in all jurisdictions and it is your responsibility to ensure compliance with the laws of any relevant jurisdiction of your residence.
+
+## **Termination**
+
+Talent Protocol reserves the right to terminate or suspend any user's access to the Platform at any time, for any reason, without notice or liability. Upon termination, users must immediately cease using the Platform and all rights and licenses granted to them under these Terms will terminate.
+
+## Promotions and Rewards
+
+Talent Protocol may offer promotions or rewards programs in connection with the Services from time-to-time. Any promotions or rewards offered are subject to additional terms and conditions that Icebreaker may provide at its sole discretion. Talent Protocol reserves the right to modify, terminate, or otherwise amend promotions or rewards programs at any time without notice.
+
+## Digital Assets and Promotions
+
+Talent Protocol may offer digital promotions, rewards, collectibles, and other digital assets in connection with the Services. Users are solely responsible for managing their digital assets and securing access to their accounts. Icebreaker is not responsible for any loss, theft, or unauthorized access of users' digital assets, including but not limited to collectibles and items, due to users' negligence, third-party actions, or technical malfunctions.
+
+## Indemnification
+
+Users agree to indemnify, defend, and hold harmless Talent Protocol and its affiliates, directors, officers, employees, and agents from and against any claims, liabilities, damages, losses, or expenses, including reasonable attorneys' fees, arising out of or related to the users' use of the Services, violation of these Terms, infringement of any intellectual property or other rights of any person or entity, or users' recommendation or promotion of scams, illegal services, or other harmful activities through the Icebreaker platform.
+
+## Third-Party Links and Content
+
+The Services may contain user-submitted content and links to third-party websites, products, or Services. Talent Protocol is not responsible for the content, accuracy, or opinions submitted by users or expressed on such third-party websites, and does not investigate, monitor, or check for accuracy or completeness of any such third-party websites. Users acknowledge that they are responsible for evaluating the suitability, legality, or safety of any third-party content, products, or services.
+
+## **Severability**
+
+If any provision of this agreement is deemed unenforceable by applicable law, court practice or custom, the remainder of this agreement shall remain in force to the fullest possible extent.
+
+## **Governing law and Legal disputes**
+
+Any matters arising from these Terms shall be governed by and interpreted in accordance with the substantive laws of Marshall Islands.
+
+If a dispute arises between you and us, you are strongly encouraged to first contact us directly to seek a resolution. For any complaints related to the service you are encouraged to contact us via our community Discord.
+
+In case of failure to settle any dispute through negotiations, any disputes which may arise out of or in connection with this Agreement shall be settled by the Marshall Island Court.
+
+If you act as a legal person or a sole proprietor, the provisions relating to special consumer rights shall not be applicable.
+
+## Entire Agreement
+
+These Terms constitute the entire agreement between users and Talent Protocol with respect to the subject matter hereof, and supersede all prior agreements, representations, warranties, and understandings between the parties.
+
+## Waiver
+
+No waiver by Talent Protocol of any term or condition set forth in these Terms shall be deemed a further or continuing waiver of such term or condition, and any failure by Icebreaker to assert a right or provision under these Terms shall not constitute a waiver of such right or provision.
+
+## Contact Information
+
+For inquiries about the Terms, please contact us at [contact@talentprotocol.com](mailto:contact@talentprotocol.com).
+
+---
+
+## creator-rewards-terms-conditions.mdx
+---
+sidebar_position: 3
+---
+
+# Creator Rewards T&C
+
+Terms and Conditions for the Creator Rewards Launch program operated by Talent Protocol.
+
+Last Updated: September 1, 2025
+
+These Terms and Conditions ("Terms") govern your participation in the Creator Rewards program ("Program") powered by Talent Protocol (Reputation DAO LLC).
+
+By participating in the Program, you (i) agree to be bound by these Terms and (ii) represent and warrant you meet all eligibility requirements. Failure to comply with these Terms or meet all eligibility requirements will result in your disqualification of the Program.
+
+## 1. Program Overview
+
+The Program automatically distributes rewards to eligible creators based on their verified onchain and open-source contributions. The Program will distribute the rewards in September, 2025.
+
+As long as the Program continues, the reward amount will increase due to new sponsors joining. The reward amount distributed within the Program can be tracked through the Creator Rewards application.
+
+## 2. Eligibility
+
+To be eligible for the Program, you must:
+
+a) Not have a wallet address on the OFAC Specially Designated Nationals (SDN) list;
+
+b) Not be the target of any applicable sanctions laws or owned or controlled by someone that is the subject of sanctions laws, including those enforced by the Office of Foreign Assets Control (OFAC) and the U.S. Department of Commerce; and
+
+c) Be in compliance with all applicable laws, rules, and regulations, including all applicable anti-money laundering and counter terrorist financing rules and regulations.
+
+## 3. Program Period
+
+The Program runs from July 23, 2025, to September 17, 2025, with a Leaderboard snapshot on August 31, 2025, and rewards distribution on September 17, 2025.
+
+## 4. Reward Structure
+
+Top 200 creators share the reward pool, proportionally to their Creator Score.
+
+## 5. Evaluation Criteria
+
+For more information about Creator Score please visit [this page](https://docs.talentprotocol.com/docs/protocol-concepts/scoring-systems/creator-score).
+
+The specific weights and formulas used to calculate rankings are proprietary and subject to change at the sole discretion of Talent Protocol.
+
+## 6. Reward Distribution
+
+Rewards are distributed automatically to eligible participants. 
+
+Creators will need to opt-in or opt-out of receiving rewards between September 1, 2025 and September 15, 2025 (11:59pm). If creators don’t select an option before deadline, the opt-out option will be selected as default.
+
+If you do not meet the eligibility criteria at the time of reward distribution, you will forfeit your right to the reward. All rewards are distributed in USDC and will take.
+
+## 7. Taxes
+
+Recipients are solely responsible for any taxes associated with rewards received through the Program. Talent Protocol will withhold any taxes or provide tax advice. Recipients should consult with their tax advisors regarding the tax implications of receiving rewards.
+
+## 8. Compliance Measures
+
+For compliance with applicable sanctions regulations:
+
+a) Automatic OFAC screening will be performed on all wallet addresses associated with Program participants;
+
+b) The Human Checkmark verification process helps ensure participants are real individuals, not automated programs or fraudulent accounts;
+
+c) Talent Protocol reserve the right to request additional verification if deemed necessary for compliance purposes before any reward distribution.
+
+## 9. Prohibited Activities
+
+The following activities are strictly prohibited:
+
+a) Creating multiple accounts to increase chances of receiving rewards;
+
+b) Using automated tools, bots, or other technical measures to artificially inflate activity metrics;
+
+c) Submitting false or misleading information;
+
+d) Engaging in any activity designed to manipulate the Creator Score or other evaluation metrics;
+
+f) Activities that violate applicable laws, including (i) all applicable sanctions laws and regulations, including those enforced by the Office of Foreign Assets Control (OFAC) and the U.S. Department of Commerce and (ii) all applicable anti-money laundering and counter terrorist financing rules and regulations; and
+
+e) Any other activity that violates the spirit of the Program as determined by Talent Protocol.
+
+## 10. Modifications to the Program
+
+Talent Protocol reserve the right, at their sole discretion, to modify, suspend, or terminate the Program or these Terms at any time and for any reason without prior notice. This includes, but is not limited to, changing eligibility criteria, reward structure, evaluation criteria, or Program duration.
+
+## 11. Privacy
+
+Participation in the Program requires the collection of certain personal information and onchain data. By participating in the Program, you consent to the collection, use, and processing of this information by Talent Protocol in accordance with its respective Privacy Policies.
+
+## 12. License to Use Content
+
+By participating in the Program, you grant Talent Protocol a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, publish, and display your name, and information about your contributions for promotional and marketing purposes related to the Program.
+
+## 13. Release
+
+By participating in the Program, you agree to release and hold harmless Talent Protocol or any of its parents, affiliates, subsidiaries, promotion agencies, sponsors,, and each of their respective directors, officers, employees, and assigns, (collectively, the “Released Parties”) from any claims or liabilities arising from participation in the Program or use/misuse of any rewards. This includes, but is not limited to, claims related to personal injury, property damage, or reputational harm.
+
+## 14. Limitation of Liability
+
+IN NO EVENT WILL THE RELEASED PARTIES BE LIABLE TO YOU FOR ANY DIRECT, SPECIAL, INCIDENTAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES (INCLUDING LOSS OF USE, DATA, BUSINESS OR PROFITS) ARISING OUT OF OR IN CONNECTION WITH YOUR PARTICIPATION IN THE CONTEST, WHETHER SUCH LIABILITY ARISES FROM ANY CLAIM BASED UPON CONTRACT, WARRANTY, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY OR OTHERWISE, AND WHETHER OR NOT THE RELEASED PARTIES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH LOSS OR DAMAGE.
+
+## 15. Disclaimers
+
+The program is provided "as is" and "as available" without warranties of any kind, either express or implied, including, but not limited to, implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+## 16. Governing Law
+
+These Terms and Conditions shall be governed by and construed in accordance with the laws of the Republic of the Marshall Islands, without regard to its conflict of law provisions. By participating in the Creator Rewards program, you agree that any dispute arising out of or relating to these Terms shall be subject to the exclusive jurisdiction of the courts of the Republic of the Marshall Islands. If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+## 17. Severability
+
+If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+## 18. Entire Agreement
+
+These Terms constitute the entire agreement between you and the Program administrators regarding the Program and supersede all prior agreements and understandings, whether written or oral.
+
+## 19. Contact Information
+
+For questions about the Program or these Terms, please contact contact@talentprotocol.com.
+
+---
+
+By participating in the Builder Rewards program, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
+
+---
+
+## privacy-notice.mdx
+---
+sidebar_position: 2
+---
+
+# Privacy Notice
+
+Last Updated: February 17, 2025.
+
+Reputation DAO LLC (“Talent Protocol,” “we,” “us,” or “our”) provides a platform that provides a platform offering tools for developers to build applications, and enables users to verify their skills, gain recognition, and earn rewards. This Privacy Notice is designed to help you understand how we collect, use, process, and share your personal information, and to help you understand and exercise your privacy rights.
+
+## SCOPE AND UPDATES TO THIS PRIVACY NOTICE
+
+This Privacy Notice applies to personal information processed by us, including on our websites, services, and other online or offline offerings (collectively described as the “Services”). Unless specifically described herein, this Privacy Notice does not apply to personal information that our customers provide in using our Services (“Customer Data”), which is instead governed by the customer’s respective privacy policies regarding their collection and use of Customer Data. Our processing of Customer Data is governed by the contracts that we have in place with our customers, not this Privacy Notice. Any questions or requests relating to Customer Data should be directed to the relevant customer’s legal or privacy team.
+
+Changes to our Privacy Notice. We may revise this Privacy Notice from time to time at our sole discretion. If there are any material changes to this Privacy Notice, we will notify you to the extent required by applicable law. You understand and agree that you will be deemed to have accepted the updated Privacy Notice if you continue to use our Services after the new Privacy Notice takes effect.
+
+## PERSONAL INFORMATION WE COLLECT
+
+The categories of personal information we collect depend on how you interact with us, our Services, and the requirements of applicable law. We collect information that you provide to us, information we obtain automatically when you use our Services, and information from other sources such as third-party services and organizations, as described below.
+
+**A. Personal Information You Provide to Us Directly**
+
+We may collect personal information that you provide to us, including the following as applicable:
+
+Account Creation. We may collect personal information when you create an account, such as:
+
+- Direct input (name, email address, username(s), wallet address(es), and professional details);
+- Data from third-party platforms (LinkedIn, X, GitHub) when you connect these accounts, such as profile information and public activity.
+
+Purchases. We may collect personal information and details associated with your purchases, including payment information.
+
+Your Communications with Us. We may collect personal information, such as email address, phone number, wallet address, Telegram username, Discord username, X username, or mailing address when you request information about our Services, register for our newsletter or educational programs or other offerings, request customer or technical support, or otherwise communicate with us.
+
+Surveys. We may contact you to participate in surveys. If you decide to participate, we may collect personal information from you in connection with the survey.
+
+Interactive Features. We and others who use our Services may collect personal information that you submit or make available through our interactive features (e.g., messaging and chat features, commenting functionalities, forums, blogs, and social media pages). Any information you provide using the public sharing features of the Services will be considered “public,” unless otherwise required by applicable law, and is not subject to the privacy protections referenced herein.
+
+Sweepstakes or Contests. We may collect personal information you provide for any sweepstakes or contests that we offer. In some jurisdictions, we are required to publicly share information of sweepstakes and contest winners.
+
+Conferences, Trade Shows, and Other Events. We may collect personal information from individuals when we attend or host conferences, trade shows, hackathons, socials or happy hours, and other events.
+
+Business Development and Strategic Partnerships. We may collect personal information from individuals and third parties to assess and pursue potential business opportunities.
+
+Job Applications. We may post job openings and opportunities. If you respond to one of these postings, we may collect your personal information, such as your application, CV, cover letter, and/or any other information you provide to us.
+
+**B. Personal Information Collected Automatically**
+
+We may collect personal information automatically when you use our Services.
+
+Automatic Collection of Personal Information. We may collect certain information automatically when you use our Services, such as your Internet protocol (IP) address, user settings, MAC address, cookie identifiers, mobile carrier, mobile advertising and other unique identifiers, browser or device information, location information (including approximate location derived from IP address), and Internet service provider. We may also automatically collect information regarding your use of our Services, such as pages that you visit before, during and after using our Services, information about the links you click, the types of content you interact with, the frequency and duration of your activities, and other information about how you use our Services.
+
+Cookie Policy (and Other Technologies). We, as well as third parties that provide content, advertising, or other functionality on our Services, may use cookies, pixel tags, and other technologies (“Technologies”) to automatically collect information through your use of our Services.
+
+Cookies. Cookies are small text files placed in device browsers that store preferences and facilitate and enhance your experience.
+
+Pixel Tags/Web Beacons. A pixel tag (also known as a web beacon) is a piece of code embedded in our Services that collects information about engagement on our Services. The use of a pixel tag allows us to record, for example, that a user has visited a particular web page or clicked on a particular advertisement. We may also include web beacons in e-mails to understand whether messages have been opened, acted on, or forwarded.
+
+Our uses of these Technologies fall into the following general categories:
+
+Operationally Necessary. This includes Technologies that allow you access to our Services, applications, and tools that are required to identify irregular website behavior, prevent fraudulent activity, improve security, or allow you to make use of our functionality;
+
+Performance-Related. We may use Technologies to assess the performance of our Services, including analytics to help us understand how individuals use our Services (see Analytics below);
+
+Functionality-Related. We may use Technologies that allow us to offer you enhanced functionality when accessing or using our Services. This may include identifying you when you sign into our Services or keeping track of your specified preferences, interests, or past items viewed;
+
+Advertising- or Targeting-Related. We may use first party or third-party Technologies to deliver content, including ads relevant to your interests, on our Services or on third-party digital properties.
+
+See “Your Privacy Choices and Rights” below to understand your choices regarding these Technologies.
+
+Analytics. We may use Technologies and other third-party tools to process analytics information on our Services. These Technologies allow us to better understand how our digital Services are used and to continually improve and personalize our Services. Some of our analytics partners include:
+
+Google Analytics. For more information about how Google uses your personal information (including for its own purposes, e.g., for profiling or linking it to other data), please visit [Google Analytics’ Privacy Policy](https://policies.google.com/technologies/partner-sites). To learn more about how to opt-out of Google Analytics’ use of your information, please click [here](https://tools.google.com/dlpage/gaoptout).
+
+**C. Personal Information Collected from Other Sources**
+
+Third-Party Services and Sources. We may obtain personal information about you from other sources, including through third-party services and organizations. For example, if you access our Services through a third-party application, such as an app store, a third-party login service, or a social networking site, we may collect personal information about you from that third-party application that you have made available via your privacy settings.
+
+## HOW WE USE YOUR PERSONAL INFORMATION
+
+We use your personal information for a variety of business purposes, including to provide our Services, for administrative purposes, and to market our products and Services, as described below.
+
+**A. Provide Our Services**
+
+We use your information to fulfil our contract with you and provide you with our Services, such as:
+
+- Managing your information and accounts;
+- Providing access to certain areas, functionalities, and features of our Services;
+- Answering requests for customer or technical support;
+- Communicating with you about your account, activities on our Services, and policy changes;
+- Processing your financial information and other payment methods for products or Services purchased;
+- Processing applications if you apply for a job we post on our Services; and
+- Allowing you to register for educational programs or other events, offerings, programs, or communities.
+
+**B. Administrative Purposes**
+
+We use your information for various administrative purposes, such as:
+
+- Pursuing our legitimate interests such as direct marketing, research and development (including marketing research), network and information security, and fraud prevention;
+- Detecting security incidents, protecting against malicious deceptive, fraudulent or illegal activity, and prosecuting those responsible for that activity;
+- Measuring interest and engagement in our Services;
+- Improving, upgrading, or enhancing our Services;
+- Developing new products and services;
+- Ensuring internal quality control and safety;
+- Authenticating and verifying individual identities, including requests to exercise your rights under this Privacy Notice;
+- Debugging to identify and repair errors with our Services;
+- Auditing relating to interactions, transactions, and other compliance activities;
+- Sharing personal information with third parties as needed to provide the Services;
+- Enforcing our agreements and policies; and
+- Carrying out activities that are required to comply with our legal obligations.
+
+**C. Marketing and Advertising our Products and Services**
+
+We may use personal information to tailor and provide you with content and advertisements. We may provide you with these materials as permitted by applicable law.
+
+Some of the ways we may market to you include email campaigns, text messages, custom audiences advertising, and “interest-based” or “personalized advertising,” including through cross-device tracking.
+
+If you have any questions about our marketing practices, you may contact us at any time as set forth in “Contact Us” below.
+
+**D. With Your Consent**
+
+We may use personal information for other purposes that are clearly disclosed to you at the time you provide personal information or with your consent.
+
+**E. Other Purposes**
+
+We also use your personal information for other purposes as requested by you or as permitted by applicable law.
+
+De-identified and Aggregated Information. We may use personal information to create de-identified and/or aggregated information, such as information about the device from which you access our Services, or other analyses we create.
+
+## HOW WE DISCLOSE YOUR PERSONAL INFORMATION
+
+We disclose your personal information to third parties for a variety of business purposes, including to provide our Services, to protect us or others, or in the event of a major business transaction such as a merger, sale, or asset transfer, as described below.
+
+**A. Disclosures to Provide our Services**
+
+The categories of third parties with whom we may share your personal information are described below.
+
+Service Providers. We may share your personal information with our third-party service providers and vendors that assist us with the provision of our Services. This includes service providers and vendors that provide us with IT support, authentication, security, hosting, payment processing, analytics, alerting, customer service, and related services.
+
+Third-Party Services You Share or Interact With. Certain features and functionalities of the Services may link to or allow you to interface, interact, or share information with, access and/or use third-party websites, services, products, and technology (collectively, “Third-Party Services”). Any information shared with or otherwise collected by a Third-Party Service may be subject to the Third-Party Service’s privacy policy. We are not responsible for the processing of personal information by Third-Party Services.
+
+Business Partners. We may share your personal information with business partners to provide you with a product or service you have requested. We may also share your personal information with business partners with whom we jointly offer products or services.
+
+Affiliates. We may share your personal information with our company affiliates, if any.
+
+Advertising Partners. We may share your personal information with third-party advertising partners. These third-party advertising partners may set Technologies and other tracking tools on our Services to collect information regarding your activities and your device (e.g., your IP address, cookie identifiers, page(s) visited, location, time of day). These advertising partners may use this information (and similar information collected from other services) for purposes of delivering personalized advertisements to you when you visit digital properties within their networks. This practice is commonly referred to as “interest-based advertising” or “personalized advertising.”
+
+APIs/SDKs. We may use or offer third-party application program interfaces (“APIs”) and software development kits (“SDKs”) as part of the Services. For more information about our use of APIs and SDKs, please see [https://docs.talentprotocol.com/docs](https://docs.talentprotocol.com/docs).
+
+**‍B. Disclosures to Protect Us or Others**
+
+We may access, preserve, and disclose any information associated with you to external parties if we, in good faith, believe doing so is required or appropriate to: comply with law enforcement or national security requests and legal process, such as a court order or subpoena; protect your, our, or others’ rights, property, or safety; enforce our policies or contracts; collect amounts owed to us; or assist with an investigation or prosecution of suspected or actual illegal activity.
+
+**C. Disclosure in the Event of Merger, Sale, or Other Asset Transfers**
+
+If we are involved in a merger, acquisition, financing due diligence, reorganization, bankruptcy, receivership, purchase or sale of assets, or transition of service to another provider, your information may be sold or transferred as part of such a transaction, as permitted by law and/or contract.
+
+## YOUR PRIVACY CHOICES AND RIGHTS
+
+Your Privacy Choices. The privacy choices you may have about your personal information are determined by applicable law and are described below.
+
+Email Communications. If you receive an unwanted email from us, you can use the unsubscribe link found at the bottom of the email or otherwise by contacting us as forth in “Contact Us” below to opt out of receiving future emails. Note that you will continue to receive transaction- related emails regarding products or Services you have requested. We may also send you certain non-promotional communications regarding us and our Services, and you will not be able to opt out of those communications (e.g., communications regarding our Services or updates to our Terms or this Privacy Notice).
+
+Text Messages. If you receive an unwanted text message from us, you may opt out of receiving future text messages from us by following the instructions in the text message you have received from us or otherwise by contacting us as set forth in “Contact Us” below.
+
+“Do Not Track.” Do Not Track (“DNT”) is a privacy preference that users can set in certain web browsers. Please note that we do not respond to or honor DNT signals or similar mechanisms transmitted by web browsers.
+
+Cookies and Personalized Advertising. You may stop or restrict the placement of Technologies on your device or remove them by adjusting your preferences as your browser or device permits. However, if you adjust your preferences, our Services may not work properly. Please note that cookie-based opt-outs are not effective on mobile applications.
+
+Your Privacy Rights. In accordance with applicable law, you may have the right to:
+
+Access to and Portability of Your Personal Information, including: (i) confirming whether we are processing your personal information; (ii) obtaining access to or a copy of your personal information; and (iii) receiving an electronic copy of personal information that you have provided to us, or asking us to send that information to another company in a structured, commonly used, and machine readable format (also known as the “right of data portability”);
+
+Request Correction of your personal information where it is inaccurate or incomplete. In some cases, we may provide self-service tools that enable you to update your personal information;
+
+Request Deletion of your personal information;
+
+Request Restriction of or Object to our processing of your personal information; and
+
+Withdraw your Consent to our processing of your personal information. Please note that your withdrawal will only take effect for future processing, and will not affect the lawfulness of processing before your withdrawal.‍
+
+If you would like to exercise any of these rights, please contact us as set forth in “Contact Us” below. We will process such requests in accordance with applicable laws.
+
+## SECURITY OF YOUR INFORMATION
+
+We take steps to ensure that your information is treated securely and in accordance with this Privacy Notice. However, we do not warrant or guarantee the security of any information you provide to us. To the fullest extent permitted by applicable law, we do not accept liability for unauthorized access, use, disclosure, or loss of personal information.
+
+By using our Services or providing personal information to us, you agree that we may communicate with you electronically regarding security, privacy, and administrative issues relating to your use of our Services. If we learn of a security system’s breach, we may attempt to notify you electronically by posting a notice on our Services, by mail, or by sending an email to you.‍
+
+## INTERNATIONAL DATA TRANSFERS
+
+All information processed by us may be transferred, processed, and stored anywhere in the world, including but not limited to the United States or other countries that may have data protection laws that are different from the laws where you live. We endeavor to safeguard your information consistent with the requirements of the applicable laws. If we transfer personal information which originates in the European Economic Area, Switzerland, and/or the United Kingdom to a country that has not been found to provide an adequate level of protection under applicable data protection laws, one of the safeguards we may use to support such transfer is the EU Standard Contractual Clauses.
+
+## RETENTION OF PERSONAL INFORMATION
+
+We store the personal information we collect as described in this Privacy Notice for as long as you use our Services, or as necessary to fulfill the purpose(s) for which it was collected, provide our Services, resolve disputes, establish legal defenses, conduct audits, pursue legitimate business purposes, enforce our agreements, and comply with applicable laws.
+
+## CHILDREN’S INFORMATION
+
+The Services are not directed to children under 16 (or other age as required by local law), and we do not knowingly collect personal information from children. If you are a parent or guardian and believe your child has uploaded personal information to our site without your consent, you may contact us as described in “Contact Us” below. If we become aware that a child has provided us with personal information in violation of applicable law, we will delete any personal information we have collected, unless we have a legal obligation to keep it, and terminate the child’s account, if applicable.
+
+## OTHER PROVISIONS
+
+Third-Party Websites/Applications. The Services may contain links to other websites/applications and other websites/applications may reference or link to our Services. These third-party services are not controlled by us. We encourage our users to read the privacy policies of each website and application with which they interact. We do not endorse, screen, or approve, and are not responsible for, the privacy practices or content of such other websites or applications. Providing personal information to third-party websites or applications is at your own risk.
+
+Supervisory Authority. If your personal information is subject to the applicable data protection laws of the European Economic Area, Switzerland, or the United Kingdom, you have the right to lodge a complaint with the competent supervisory authority if you believe our processing of your personal information violates applicable law.
+
+## CONTACT US
+
+Talent Protocol is the controller of the personal information we process under this Privacy Notice. If you have any questions about our privacy practices or this Privacy Notice, or to exercise your rights as detailed in this Privacy Notice, please contact us at contact@talentprotocol.com.
+
+---
+
+## terms-of-service.mdx
+---
+sidebar_position: 1
+---
+
+# Terms of Service
+
+Last Updated: July 24, 2025.
+
+These Terms of Service (this “Agreement”) govern your use of the Services (defined below), including through our website or online sign-up or as purchased under an applicable Order Form (defined below). To make this Agreement easier to read, the terms “Talent Protocol,” “we,” and “us” refer to Reputation DAO LLC, registry code 10070-24, address 852, Long Island Rd, Majuro, 96960, Marshall Islands, and the terms “you”, “your”, or “Subscriber” refer to you and any organization that you are acting on behalf of or has authorized you to use these Services (including the organization set forth on an applicable Order form). If you are using the Services on behalf of an organization (such as your employer, a decentralized autonomous organization, or other legal entity), you represent and warrant that you have the authority to bind that entity to this Agreement. You and Talent Protocol may be referred to herein collectively as the “Parties” or individually as a “Party”.
+
+BY USING THE SERVICES, CLICKING A BUTTON OR CHECKBOX TO ACCEPT OR AGREE TO THESE TERMS, OR IF YOU HAVE ENTERED INTO AN ORDER FORM TO OBTAIN THE RIGHT TO USE THE SERVICES, THEN YOU AGREE TO BE FULLY BOUND BY THIS AGREEMENT.
+
+## 1. DEFINITIONS.
+
+1.1. “Authorized User” means an employee or contractor that you authorize to Use the Services.
+
+1.2. “Documentation” means the operator and user manuals, training materials, specifications, minimum system configuration requirements, compatible device and hardware list, and other similar materials in hard copy or electronic form (including at [https://docs.talentprotocol.com](https://docs.talentprotocol.com/docs)) if, as provided by Talent Protocol to you (including any revised versions thereof), they relate to the Services, which may be updated by us from time to time.
+
+1.3. “End User” means a third-party individual or entity that utilizes or accesses applications you provide or create using the Services.
+
+1.4. “Effective Date” means the effective date set forth on an Order Form, or if you have not entered into an Order Form then the date you first access or use the Services.
+
+1.5. “Intellectual Property Rights” means patent rights (including patent applications and disclosures), inventions, copyrights, trade secrets, know-how, data and database rights, mask work rights, and any other intellectual property rights recognized in any country or jurisdiction in the world.
+
+1.6. “Licensed Volume” means the limits, volume, or other measurement or conditions of permitted Use for the applicable Service as set forth on our website or in the applicable Order Form.
+
+1.7. “Order Form” means an order form (such as the Talent Protocol Service Order Form) or other ordering document agreed to in writing or electronically by you and Talent Protocol that references this Agreement and sets forth the applicable Services to be provided by Talent Protocol.
+
+1.8. “Platform Data” means any data that is derived or aggregated in deidentified form from (i) Your Data; or (ii) your and/or your Authorized Users’ use of the Services, including any hardware metrics (if applicable), software event logs, globally unique identifiers for files, usage data or trends with respect to the Services.
+
+1.9. “Talent Protocol IP” means the Services, the Software, algorithms, interfaces, technology, databases, tools, know-how, processes, and methods used to provide or deliver the Services or support your use thereof, Account Data, Documentation and Platform Data, all improvements, modifications or enhancements to, or derivative works of, the foregoing (regardless of inventorship or authorship), and all Intellectual Property Rights in and to any of the foregoing.
+
+1.10. “Restricted Data” means data containing card holder data as defined in the Payment Cards Industry Data Security Standard (“PCI DSS”) or any other regulated data that is described as Restricted Data in an Order Form.
+
+1.11. “Services” means Talent Protocol’s cloud-hosted infrastructure, developer tools, and application programming interfaces (APIs), as more particularly described or identified on Talent Protocol's website or otherwise in an applicable Order Form, and any Updates, patches, bug fixes and upgrades that Talent Protocol elects to provide to you.
+
+1.12. “Software” means the underlying software made accessible as part of or provided in conjunction with the Services.
+
+1.13. “Third Party” means any individual, corporation, partnership, trust, limited liability company, association, governmental authority, or other entity.
+
+1.14. “Use” means to use and/or access in accordance with this Agreement and the [Documentation](https://docs.talentprotocol.com/docs).
+
+1.15. “Updates” means any changes that Talent Protocol may at its discretion implement as generally available without requiring payment of additional fees. Updates do not include new offerings that Talent Protocol makes available for an additional charge.
+
+1.16. “Your Data” means all information, data, content and other materials, in any form or medium, that is submitted, posted, collected, transmitted or otherwise provided by or on behalf of you or your End Users through the Services or to us in connection with your use of the Services, but excluding, for clarity, Account Data, Platform Data, Restricted Data and any other information, data, data models, content or materials owned or controlled by us and made available through or in connection with the Services.
+
+## 2. SERVICES; ACCESS AND USE.
+
+2.1. Access to Services & License to Software. Subject to Your continued and full compliance with the terms and conditions of this Agreement, Talent Protocol hereby grants you during the Term (i) the right to Use the Services solely for your internal business purposes in accordance with, and subject to, the Licensed Volume; and (ii) a limited, non-exclusive, non-sublicenseable, non-transferable (except in compliance with Section 14.6) license to Use the Software. The Services and Software are deemed delivered to you upon the provision of access for your benefit.
+
+2.2. Use Restrictions. You will not at any time and will not permit any Third Party or Authorized User to, directly or indirectly: (i) use the Services in any manner beyond the scope of rights expressly granted in this Agreement; (ii) store, transmit or transfer any Restricted Data within or in connection with the Services; (iii) modify or create derivative works of the Services or Documentation, in whole or in part; (iv) reverse engineer, disassemble, decompile, decode or otherwise attempt to derive or gain improper access to any Software component of the Services, in whole or in part; (v) frame, mirror, sell, resell, rent or lease use of the Services to any other Third Party, or otherwise allow any Third Party to use the Services for any purpose other than for your benefit in accordance with this Agreement, unless otherwise agreed in writing by Talent Protocol; (vi) use the Services or Documentation in any manner or for any purpose that infringes, misappropriates, or otherwise violates any Intellectual Property Right or other right of any Third Party, or that violates any applicable law; (vii) interfere with, or disrupt the integrity or performance of, the Services, or any data or content contained therein or transmitted thereby; (viii) access or search the Services (or download any data or content contained therein or transmitted thereby) through the use of any engine, software, tool, agent, device or mechanism (including spiders, robots, crawlers or any other similar data mining tools) other than Software or Services features provided, or authorized, by Talent Protocol for use expressly for such purposes; (ix) use the Services, Documentation, or any other Talent Protocol Confidential Information for benchmarking or competitive analysis with respect to competitive or related products or services, or to develop, commercialize, license, or sell any product, service or technology that could, directly or indirectly, compete with the Services; or (x) multiplex or spread usage across multiple accounts or otherwise circumvent usage or capacity limits or the Licensed Volume; (xi) use scraping techniques to mine or scrape data from the Services; or (xii) use the Services to transmit harmful code, file, scripts, agents, or programs, including viruses, worms, time bombs, or Trojan horses; or (xiii) attempt to gain unauthorized access to Talent Protocol’s systems or networks. Portions of the Services may include notices of open source or similar licenses, and you will comply with such licenses.
+
+2.3. Authorized Users. You will not allow any Third Party other than Authorized Users to Use the Services. You may permit Authorized Users to Use the Services, provided that (i) the Use does not exceed the Licensed Volume; and (ii) you ensure each Authorized User complies with all applicable terms and conditions of this Agreement. You are responsible for acts or omissions by Authorized Users in connection with using the Services. You will, and will require all Authorized Users to, use all reasonable means to secure user names, passwords, API keys, hardware, and software used to access the Services in accordance with standard security protocols (e.g., multi-factor authentication), and will immediately notify us if you know or reasonably suspect that any user name, password, or API key has been compromised. Talent Protocol will not be liable, and you will be solely responsible, for (A) any unauthorized access, damage or loss that may occur through the use or misuse of your user names, passwords, API keys, hardware or software; or (B) any activities that occur under any account issued to or created by you in connection with your use of the Services, including any unauthorized access or use of any such account, in each case, except to the extent proven to have been directly caused by Talent Protocol’s gross negligence, willful misconduct, or fraud. Talent Protocol may process personal information about your and Authorized Users’ Use of the Services (“Account Data”) in accordance with the Talent Protocol Privacy Notice ([https://docs.talentprotocol.com/docs/legal/privacy-notice](https://docs.talentprotocol.com/docs/legal/privacy-notice)). For example, Account Data includes an Authorized User’s login data and related usage data. Account Data is not Your Data, and the Talent Protocol Privacy Notice does not apply to Your Data.
+
+2.4. Third-Party Services. Certain features and functionalities within the Services may allow you or your Authorized Users to interface or interact with, access, or use compatible third-party services, products, software, technology, and content (collectively, “Third-Party Services”) through or integrated with the Services. We do not provide the Third-Party Services and are not responsible for any compatibility issues, errors, or bugs in the Services or Third-Party Services caused in whole or in part by the Third-Party Services or any update or upgrade thereto. Your use of any Third-Party Service is at your own risk. You are solely responsible for obtaining any associated licenses and consents to the extent necessary for you to use the Third-Party Services in connection with the Services. Your use of the Third-Party Services may be subject to separate terms and conditions set forth by the provider (including disclaimers or warnings), separate fees or charges, or a separate privacy notice. You are responsible for understanding and complying with any such terms or privacy notice.
+
+2.5. Third Party Reports. As an intermediary, Talent Protocol may receive notices from third parties (“Reporters”) regarding Your Data or your use of the Services (“Reports”). Talent Protocol will forward Reports directly to an email address provided by you designated to receive Reports (the “Abuse Contact”). Talent Protocol may provide the Abuse Contact to a Reporter inquiring about Your Data or your use of the Services.
+
+2.6. Service Notices. If Talent Protocol learns or reasonably suspects that you are violating your obligations under this Section 2 or Section 6, Talent Protocol will notify the Abuse Contact by email (the “Service Notice”) and request that you take appropriate action, including ceasing problematic usage, changing a configuration, updating account credentials or removing certain of Your Data. If you fail to comply with a Service Notice within the time period set forth in the Service Notice, Talent Protocol may block your access to the Services until the requested action is taken. If you fail to take the required action within ten (10) days or fail to comply with your obligations under Section 2.1-2.3 or Section 6.3 & 6.4 on two (2) or more occasions during any rolling twelve (12) month period, Talent Protocol may terminate the Agreement immediately for cause. Without limiting the foregoing, Talent Protocol may suspend your access immediately if your use may (i) create a security risk; (ii) violate laws or regulations; (iii) breach this Agreement; or (iv) subject us or any third party to liability. We also reserve the right to restrict your API requests if your usage exceeds the Licensed Volume or other throughput limitations. All limitations of access, suspensions, and terminations for cause shall be made in Talent Protocol’s sole discretion and Talent Protocol shall not be liable to you or any third party for any suspension or termination of your account or access to the Services.
+
+2.7. Reservation of Rights. Subject to the limited rights expressly granted hereunder, Talent Protocol reserves and, as between the Parties, will solely own the Talent Protocol IP and all rights, title, and interest in and to the Talent Protocol IP. Talent Protocol reserves the right to modify the Services by adding, deleting, or modifying features to improve the user experience or otherwise in our reasonable discretion. No rights are granted to you hereunder (whether by implication, estoppel, exhaustion or otherwise) other than as expressly set forth herein.
+
+2.8. Security Measures. Talent Protocol has implemented technical and organizational measures to ensure the security and integrity of the Services consistent with industry standard practices. These safeguards will include measures for preventing unauthorized access, use, modification, deletion, and disclosure of Your Data by Talent Protocol personnel. However, you are responsible for the accuracy, legality, and appropriateness of Your Data, and for adequate security, protection and backup of Your Data when in your possession or control.
+
+2.9. Copyright & Trademark Notices. The Services may contain material including software, text, images, recordings, or audiovisuals that are owned by us or licensed by third parties. You agree to maintain and not remove or obscure any copyright, trademark, logos, or other proprietary notices in the Services, Software, or associated media.
+
+## 3. FEES AND PAYMENT.
+
+3.1. Fees. You will pay Talent Protocol the non-refundable fees set forth in your online checkout, or in an applicable Order Form in accordance with the terms therein (“Fees”) and without offset or deduction. IF YOU HAVE SIGNED UP FOR AUTOMATIC BILLING, YOU AGREE THAT WE MAY CHARGE YOUR SELECTED PAYMENT METHOD (E.G., CREDIT CARD) FOR ANY FEES ON THE APPLICABLE PAYMENT DATE, INCLUDING ANY APPLICABLE TAXES, AND ON A RECURRING BASIS IF APPLICABLE UNTIL YOU PROVIDE WRITTEN NOTICE TO TALENT PROTOCOL (VIA EMAIL OR THE SERVICES) THAT YOU ARE CANCELLING YOUR SUBSCRIPTION. We may increase or add new fees or charges for Services by using commercially reasonable efforts to notify you. You agree to provide accurate and updated name, company name, address, and billing information. If we cannot charge your selected payment method for any reason (such as card expiration or insufficient funds), you will remain responsible for any uncollected amounts, and we will attempt to charge you after you update your payment method information. In accordance with applicable law, we may update information regarding your selected payment method if provided such information by your financial institution. Fees shall not be contingent upon any as-yet-unreleased functionality or features or any statements not set forth in the Agreement or Order Form. For clarity, the Fees do not include any fees owed to any third party or for Third Party Services, including any fees payable to your hosting provider in connection with the download, upload, or transmission of Your Data.
+
+3.2. Taxes. You are responsible for all sales, use, ad valorem and excise taxes, value added, and any other similar taxes, duties, and charges of any kind imposed by any federal, state, multinational, or local governmental regulatory authority on any amount payable by you to Talent Protocol hereunder, other than any taxes imposed on Talent Protocol’s income. In the event that you are required to deduct or withhold any taxes from the amounts payable to Talent Protocol hereunder, you will pay an additional amount, so that Talent Protocol receives the amounts due to it hereunder in full, as if there were no withholding or deduction.
+
+## 4. CONFIDENTIAL INFORMATION.
+
+4.1. As used herein, “Confidential Information” means any information that one Party (the “Disclosing Party”) provides to the other Party (the “Receiving Party”) in connection with this Agreement, whether orally or in writing, that is designated as confidential or that reasonably should be considered to be confidential given the nature of the information and/or the circumstances of disclosure. In particular, Confidential Information includes: (i) Talent Protocol IP; (ii) Your Data; (iii) any other information that by its nature would be understood by a reasonable person to be confidential, including but not limited to pricing, software, algorithms, business plans, product plans, technical information, or business processes disclosed by either Party. However, Confidential Information will not include any information or materials that: (i) were at the time of disclosure, or have subsequently become, generally known or available to the public through no act or omission of the Receiving Party; (ii) were rightfully known by the Receiving Party prior to receiving such information or materials from the Disclosing Party; (iii) are rightfully acquired by the Receiving Party from a third party who has the right to disclose such information or materials without breach of any confidentiality or non-use obligation to the Disclosing Party; or (iv) are independently developed by or for the Receiving Party without use of or access to any Confidential Information of the Disclosing Party.
+
+4.2. The Receiving Party will maintain the Disclosing Party’s Confidential Information in strict confidence, and will not use the Confidential Information of the Disclosing Party except as necessary to perform its obligations or exercise its rights under this Agreement. The Receiving Party will not disclose or cause to be disclosed any Confidential Information of the Disclosing Party, except (i) to those employees, representatives, or contractors of the Receiving Party who have a bona fide need to know such Confidential Information to perform under this Agreement and who are bound by written agreements with use and nondisclosure restrictions at least as protective as those set forth in this Agreement, or (ii) as such disclosure may be required by the order or requirement of a court, administrative agency, or other governmental body, subject to the Receiving Party providing to the Disclosing Party reasonable written notice to allow the Disclosing Party to seek a protective order or otherwise contest the disclosure.
+
+4.3. Each Party’s obligations of non-disclosure with regard to Confidential Information are effective as of the Effective Date and will expire five (5) years from the date first disclosed to the Receiving Party; provided, however, with respect to any Confidential Information that constitutes a trade secret (as determined under applicable law), such obligations of non-disclosure will survive the termination or expiration of this Agreement for as long as such Confidential Information remains subject to trade secret protection under applicable law.
+
+4.4. The terms and conditions of any negotiated agreement or pricing proposal will constitute Confidential Information of each Party but may be disclosed on a confidential basis to a Party’s advisors, attorneys, actual or potential acquirers, investors, or other sources of funding (and their respective advisors and attorneys) for due diligence purposes.
+
+## 5. SUPPORT AND SERVICE LEVELS.
+
+Talent Protocol will provide support services according to its standard support terms, which Talent Protocol may update from time to time. Service level commitments may be procured for an additional charge under an applicable Order Form.
+
+## 6. YOUR MATERIALS AND DATA.
+
+6.1. As between you and Talent Protocol, you own and retain all right, title, and interest in and to all Your Data.
+
+6.2. You hereby grant Talent Protocol a non-exclusive, worldwide, royalty-free right and license to use, host, reproduce, display, perform, and modify Your Data solely for the purpose of hosting, providing, operating, and improving the Services and Talent Protocol’s other related products, services, and technologies during the Term or as otherwise required by applicable law. Talent Protocol may generate and use Platform Data to provide, operate, and improve the Services or for any lawful purpose.
+
+6.3. You represent and warrant that you have obtained and will obtain and continue to have, during the Term, all necessary rights, authority, consents, and licenses for the access to and use of Your Data (including any personal data provided or otherwise collected pursuant to your privacy policy) as contemplated by this Agreement.
+
+6.4. You represent and warrant that Talent Protocol’s access or receipt of Your Data in accordance with this Agreement will not violate any applicable laws, rules, or regulations (including but not limited to privacy laws or cause a breach of any agreement or obligations between you and any third party.
+
+## 7. REPRESENTATIONS AND WARRANTIES.
+
+7.1. Mutual. Each Party represents and warrants to the other Party as of the Effective Date that (i) it is duly organized, validly existing and in good standing under its jurisdiction of organization and has the right to enter into this Agreement; and (ii) the execution and performance of this Agreement are within the corporate powers of such Party, have been duly authorized by all necessary corporate action on the part of such Party, and constitute a valid and binding agreement.
+
+7.2. Talent Protocol Warranties. Talent Protocol represents and warrants as of the Effective Date that (i) it will provide the Services in a professional and workmanlike manner in accordance with industry standards; and (ii) the Services will substantially conform to the Documentation. The sole remedy for a breach of the foregoing warranty shall be the refund of a pro-rated amount of the Fees paid for the remaining portion of the Term.
+
+## 8. INDEMNIFICATION.
+
+8.1. Talent Protocol Indemnification. Subject to Section 8.2, Talent Protocol will defend you against any claim, suit or proceeding brought by a third party (“Claims”) alleging that your Use of the Services infringes or misappropriates such third party’s Intellectual Property Rights, and will indemnify you and hold you harmless against any damages, costs, fees (including reasonable attorneys’ fees), or expenses (“Losses”) finally awarded against you in a non-appealable order or agreed in settlement by Talent Protocol resulting from such Claim.
+
+8.2. Exclusions. Talent Protocol’s obligations under Section 8.1 will not apply to the extent the underlying third-party Claim arises from: (i) your breach of this Agreement, negligence, willful misconduct, or fraud; (ii) Your Data; (iii) modifications or combinations of the Services with software, data or materials not provided by Talent Protocol; or (iv) any use of Services after we have notified you to discontinue such use.
+
+8.3. IP Remedies. If Talent Protocol reasonably believes the Services (or any component thereof) could infringe any third party’s Intellectual Property Rights, Talent Protocol may, at its sole option and expense use commercially reasonable efforts to: (i) modify or replace the Services, or any component or part thereof, to make it non-infringing; or (ii) procure the right for you to continue Use. If Talent Protocol determines that neither alternative is commercially reasonable, Talent Protocol may terminate this Agreement, in its entirety or with respect to the affected component, and refund a pro-rated amount of any Fees paid for the remaining portion of the Term. The rights and remedies set forth in this Section 8 will constitute your sole and exclusive remedy for any infringement or misappropriation of Intellectual Property Rights in connection with the Services.
+
+8.4. Your Indemnification. Subject to Section 8.5, You will defend Talent Protocol against Claims and indemnify and hold Talent Protocol harmless from any Losses finally awarded against Talent Protocol in a non-appealable order or agreed by you in settlement, to the extent arising from (i) Your Data, including any Claim that Your Data infringes, misappropriates, or otherwise violates any third party’s Intellectual Property Rights or privacy or other rights; (ii) your breach of this Agreement or violation of applicable law, rule, or regulation; (iii) your products or services, or any dispute between you and your End Users; (iv) any fraud, misrepresentation, misstatement, or false advertising claims arising from Talent Protocol’s marketing of your products or services as instructed or approved by you.
+
+8.5. Indemnification Procedures. The Party seeking defense and indemnity (the “Indemnified Party”) will promptly (and in any event no later than thirty (30) days after becoming aware of any Claim) notify the other Party (the “Indemnifying Party”) of the Claim for which indemnity is being sought, and will reasonably cooperate with the Indemnifying Party in the defense and/or settlement thereof. The Indemnifying Party shall have the sole control of the defense of any Claim for which the Indemnifying Party is responsible hereunder (provided that the Indemnifying Party may not settle any Claim without the Indemnified Party’s prior written approval). The Indemnified Party may participate in the defense or settlement of any such Claim at its own expense and with its own choice of counsel.
+
+## 9. WARRANTY; DISCLAIMER.
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW AND EXCEPT AS EXPRESSLY SET FORTH HEREIN, THE SERVICES, AND OTHER TALENT PROTOCOL IP ARE PROVIDED ON AN “AS IS” BASIS, AND TALENT PROTOCOL MAKES NO WARRANTIES OR REPRESENTATIONS TO YOU, YOUR AUTHORIZED USERS, OR ANY OTHER PARTY REGARDING THE TALENT PROTOCOL IP, THE SERVICES, OR ANY OTHER SERVICES OR MATERIALS PROVIDED BY OR ON BEHALF OF TALENT PROTOCOL HEREUNDER. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, TALENT PROTOCOL DISCLAIMS ALL WARRANTIES AND REPRESENTATIONS, WHETHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT, AND ANY WARRANTIES ARISING OUT OF COURSE OF DEALING OR USAGE OF TRADE. WITHOUT LIMITING THE FOREGOING, TALENT PROTOCOL DISCLAIMS ANY WARRANTY THAT USE OF THE SERVICES, ANY TALENT PROTOCOL IP, OR SERVICES, THE INTERNET, NETWORK, BLOCKCHAIN NETWORK, OR SYSTEMS INFRASTRUCTURE, OR OTHER THIRD-PARTY SERVICES UNDERLYING THE SERVICES WILL BE ERROR-FREE, BUG-FREE, OR UNINTERRUPTED. YOUR USE OF THE SERVICES AND ANY CONCLUSIONS DRAWN THEREFROM ARE AT YOUR OWN RISK AND YOU WILL BE SOLELY LIABLE AND RESPONSIBLE FOR ANY DAMAGE OR LOSS RESULTING THEREFROM. YOU UNDERSTAND THAT DIGITAL ASSETS AND CRYPTOASSETS ARE SUBJECT TO MARKET VOLATILITY, AND THAT THE COST AND SPEED OF BLOCKCHAIN NETWORKS ARE VARIABLE AND CANNOT BE CONTROLLED BY TALENT PROTOCOL. YOU ASSUME FULL RESPONSIBILITY FOR ALL RISKS OF ACCESSING AND USING THE SERVICES TO INTERACT WITH BLOCKCHAIN NETWORKS.
+
+## 10. LIMITATIONS OF LIABILITY.
+
+10.1. Exclusion of Damages. EXCEPT FOR: (I) FRAUD, GROSS NEGLIGENCE, OR WILLFUL MISCONDUCT BY EITHER PARTY, OR (II) BREACH OF YOUR PAYMENT OBLIGATIONS, NEITHER PARTY WILL BE LIABLE TO THE OTHER FOR ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE, OR CONSEQUENTIAL DAMAGES, OR ANY LOSS OF INCOME, DATA, FUNDS, ASSETS, PROFITS, REVENUE, GOODWILL, REPUTATION, OR BUSINESS INTERRUPTION, OR THE COST OF COVER OR SUBSTITUTE SERVICES, ARISING OUT OF OR IN CONNECTION WITH THIS AGREEMENT, WHETHER SUCH LIABILITY ARISES FROM ANY CLAIM BASED ON CONTRACT, WARRANTY, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY OR OTHERWISE, AND WHETHER OR NOT SUCH PARTY WAS ADVISED OF THE POSSIBILITY OF SUCH LOSS OR DAMAGE.
+
+10.2. General Liability Cap. Except for claims related to breaches of confidentiality, misuse of the API, or indemnification obligations, neither party’s total liability under this Agreement will exceed the total fees paid by you for the API Credits purchased under this Agreement. This limitation applies regardless of the legal theory (e.g., contract, negligence, etc.) and even if the party was advised of the possibility of such damages.
+
+# 11. TERM AND TERMINATION.
+
+11.1. Term. This Agreement begins on the Effective Date and continues indefinitely unless terminated as defined below or in the Order Form.
+
+11.2. Termination by You. If you are using the Talent API on the Builder tier (free tier), you may terminate this Agreement at any time by ceasing to use the Services. For other tiers of Talent API or other services/products, termination terms are specified in the Order Form.
+
+11.3. Termination for Breach. Either Party may terminate this Agreement, effective on written notice to the other Party, if the other Party materially breaches this Agreement, and such breach remains uncured thirty (30) days after the non-breaching Party provides the breaching Party with written notice of such breach.
+
+11.4. Termination by Talent Protocol. Talent Protocol may terminate this Agreement by providing fourteen (14) days’ written notice to you and refund a pro-rated amount of any Fees paid for the remaining portion for the Term.
+
+11.5. Survival. This Section 11.5 and Sections 1, 2.2, 2.3, 2.4, 2.7, 3, 4, 6, 8, 9, 10, 11.5, 11.6, 12, 13, and 14 survive any termination or expiration of this Agreement.
+
+11.6. Effect of Termination. Upon expiration or termination of this Agreement: (i) the rights granted pursuant to Section 2.1 will terminate; and (ii) you will return or destroy, at Talent Protocol’s sole option, all Talent Protocol Confidential Information in your possession or control, including permanent removal of such Talent Protocol Confidential Information (consistent with customary industry practice for data destruction) from any storage devices or other hosting environments that are in your possession or under your control, and at Talent Protocol’s request, certify in writing to Talent Protocol that the Talent Protocol Confidential Information has been returned, destroyed or, in the case of electronic communications, deleted. No expiration or termination will affect your obligation to pay all outstanding Fees through the effective date of expiration or termination, or entitle you to any refund.
+
+# 12. DISPUTE RESOLUTION; ARBITRATION & CLASS WAIVER
+
+12.1. Mandatory Arbitration. If a dispute, claim, or controversy arises out of or relates to this Agreement, the Parties will first attempt to resolve it through good-faith negotiations. If the Parties cannot resolve the dispute within sixty (60) days, the dispute will be resolved by binding, individual arbitration administered by a mutually agreed-upon arbitration provider. The arbitration will take place in the Marshall Islands, unless otherwise agreed by the Parties. Each Party waives the right to a trial by jury or to participate in a class action or representative proceeding.
+
+12.2. Arbitration Rules. The arbitration will be conducted according to the rules of the chosen arbitration provider. The arbitrator will have exclusive authority to decide all issues, including the interpretation, enforceability, and scope of this arbitration agreement.
+
+12.3. Injunctive Relief. Nothing in this Agreement prevents either Party from seeking injunctive or equitable relief (e.g., to protect intellectual property rights, confidentiality, or enforce an arbitration award) in a court of competent jurisdiction.
+
+12.4. Class Action Waiver. Both Parties agree to bring claims against each other only in their individual capacity, and not as a plaintiff or class member in any class, representative, or consolidated action. The arbitrator may not consolidate claims or preside over any form of class or representative proceeding.
+
+# 13. GOVERNING LAW
+
+13.1. Governing Law; Jurisdiction. This Agreement will be governed by and construed in accordance with the applicable laws of the Marshall Islands, without regard to conflicts of laws principles.
+
+## 14. GENERAL
+
+14.1. Entire Agreement. This Agreement, including any exhibits, is the complete and exclusive agreement between the Parties with respect to its subject matter and supersedes all prior or contemporaneous agreements, communications and understandings, both written and oral, with respect to its subject matter. This Agreement may be amended or modified only by a written document executed by duly authorized representatives of the Parties. In the event of any conflict between this Agreement and any Order Form, the Order Form shall prevail.
+
+14.2. Publicity. You hereby grant Talent Protocol a right and license to (i) use your name and logo on its website; (ii) use a general description of your relationship with Talent Protocol in press releases and other marketing and promotional materials and appearances; and (iii) use you upon reasonable request as a reference account and for other marketing events including with press, analysts, and Talent Protocol’s existing or potential investors or customers. Any such use will be consistent with any branding guidelines provided by you and shall in no way demean or disparage you.
+
+14.3. Notices. All notices required or permitted under this Agreement will be in writing, will reference this Agreement, and will be sent, if to Talent Protocol, to contact@talentprotocol.com or, if to you, then to the contact information you have provided to Talent Protocol.
+
+14.4. Waiver. Either Party’s failure to enforce any provision of this Agreement will not constitute a waiver of future enforcement of that or any other provision. No waiver of any provision of this Agreement will be effective unless it is in writing and signed by the Party granting the waiver.
+
+14.5. Severability. If any provision of this Agreement is held invalid, illegal or unenforceable, that provision will be enforced to the maximum extent permitted by law, given the fundamental intentions of the Parties, and the remaining provisions will remain in full force and effect.
+
+14.6. Assignment. Neither Party may assign or transfer this Agreement, by operation of law or otherwise, without the other Party’s prior written consent. Any attempt to assign or transfer this Agreement without such consent will be void. Notwithstanding the foregoing, either Party may assign or transfer this Agreement to a third party that succeeds to all or substantially all of the assigning Party’s business and assets relating to the subject matter of this Agreement, whether by sale, merger, operation of law or otherwise. Subject to the foregoing, this Agreement is binding upon and will inure to the benefit of each of the Parties and their respective successors and permitted assigns.
+
+14.7. Equitable Relief. Each Party agrees that a breach or threatened breach by such Party of any of its obligations under Section 4 or your breach of Section 2.2 would cause the other Party irreparable harm and significant damages for which there may be no adequate remedy under law and that, in the event of such breach or threatened breach, the other Party will have the right to seek immediate equitable relief, including a restraining order, an injunction, specific performance and any other relief that may be available from any court. Such remedies are not exclusive and are in addition to all other remedies that may be available at law, in equity or otherwise.
+
+14.8. Force Majeure. Neither Party will be responsible for any failure or delay in the performance of its obligations under this Agreement (except for any payment obligations) due to causes beyond its reasonable control, which may include labor disputes, strikes, lockouts, shortages of or inability to obtain energy, raw materials or supplies, denial of service or other malicious attacks, telecommunications failure or degradation, pandemics, epidemics, public health emergencies, governmental orders and acts (including government-imposed travel restrictions and quarantines), material changes in law, war, terrorism, riot, or acts of God.
+
+14.9. Relationship of the Parties. The relationship between the Parties is that of independent contractors. Nothing in this Agreement will be construed to establish any partnership, joint venture or agency relationship between the Parties. Neither Party will have the power or authority to bind the other or incur any obligations on the other’s behalf without the other Party’s prior written consent.
+
+14.10. No Third-Party Beneficiaries. No provision of this Agreement is intended to confer any rights, benefits, remedies, obligations, or liabilities hereunder upon any Third Party.
+
+14.11. Changes to Agreement. Talent Protocol may modify this Agreement from time to time. Any changes will be posted on our website and the Agreement will indicate the date it was last updated. The changes will become effective thirty (30) days after posting. By continuing to use the Service you are deemed to have accepted any updated terms. If you do not agree to the updated terms you must notify us and discontinue using the Service.
+
+---
+
+# protocol-concepts
+
+## account.mdx
+---
+sidebar_position: 2
+---
+
+# Account
+
+An Account represents a connection with a third-party data provider.
+
+An **Account** represents a connection with a third-party entity (e.g., Wallet Address, GitHub, X, LinkedIn) that feeds reputation data into Talent Protocol. Accounts can exist independently or be linked to a user.
+
+A [**User**](/docs/protocol-concepts/user) represents an individual that signed up on talentprotocol.com to verify their reputation data and increase their [Builder Score](/docs/protocol-concepts/scoring-systems/builder-score), by connecting multiple [**accounts**](/docs/protocol-concepts/account)**.**
+
+## Key Attributes:
+
+- **Accounts** have Account IDs (previously know as Passport ID) and account-specific URLs (until they're linked to a user), following this format:
+  - `talentprotocol.com/address/0xbd…23d4`
+  - `talentprotocol.com/github/filmacedo`
+- If linked to a user, the account URL will automatically redirect to the user’s profile URL. Otherwise, it will show the data from that imported account independently.
+- Once linked to a user, an account loses its independent profile and redirect to the user’s profile. The account also loses its [Builder Score](/docs/protocol-concepts/scoring-systems/builder-score), and its data feeds into the user’s aggregated reputation.
+- Accounts display their own [Builder Score](/docs/protocol-concepts/scoring-systems/builder-score) unless linked to a user, at which point their data integrates into the user’s aggregated [Builder Score](/docs/protocol-concepts/scoring-systems/builder-score).
+- Users can claim an imported account by verifying ownership (e.g., signing a wallet message, connecting GitHub).
+
+## Types of Accounts:
+
+- I**ndexed Account**: All accounts being tracked by Talent Protocol, whether connected by users or imported automatically.
+
+- **Imported Account**: Public accounts indexed directly by Talent Protocol, without any explicit user action, such as curated wallet addresses or public GitHub profiles.
+
+- **Connected Account**: Accounts actively linked to a user’s profile and with verified ownership.
+
+## Account Sources
+
+Accounts can come from various sources:
+
+- `wallet`: Cryptocurrency wallets (Ethereum, Base, etc.)
+- `github`: GitHub developer accounts
+- `farcaster`: Farcaster social accounts
+- `lens`: Lens Protocol accounts
+- `x_twitter`: Twitter/X accounts
+- `linkedin`: Professional LinkedIn profiles
+- `talent_protocol`: Native Talent Protocol accounts
+- `worldcoin`: World ID verified accounts
+- `self`: Self-verified information
+
+## Account Properties
+
+- `identifier`: The unique identifier on the source platform
+- `source`: The platform or data provider (see Account Types)
+- `owned_since`: When the account was first created
+- `connected_at`: When the account was connected to Talent Protocol
+- `username`: The user-friendly name on the source platform
+
+## Account Relationship to Profiles
+
+- An Account can exist independently with its own [Profile](/docs/protocol-concepts/profile)
+- When claimed by a [User](/docs/protocol-concepts/user), the Account feeds data into the User's Profile
+- Multiple Accounts from different sources can be connected to a single User Profile
+
+## Accessing Account Data
+
+[API](/docs/developers/talent-api/api-reference) provides endpoints to:
+
+- Retrieve accounts associated with a profile
+- Search profiles by account identifiers
+- Access data points sourced from specific accounts
+
+---
+
+## data-issuer.mdx
+---
+sidebar_position: 6
+---
+
+# Data Issuer
+
+A Data Issuer is the trusted entity associated with Data Point on Talent Protocol.
+
+## Key Attributes:
+
+- Represents the source of trust for the data (e.g., GitHub, Base, ENS).
+- It can be distinct from the technical provider where Talent Protocol fetches the data from ([Accounts](/docs/protocol-concepts/account)).
+- Some Data Issuers can also be [Accounts](/docs/protocol-concepts/account) (e.g., GitHub), while others are not (e.g., Base).
+- Some [Accounts](/docs/protocol-concepts/account) can provide multiple data issuers (ex.: wallet address)
+- A single Data Issuer can provide multiple [Data Points](/docs/protocol-concepts/data-point).
+
+## Examples:
+
+- GitHub is both an Account (where we get the data from technically) and the Data Issuer (entity that we trust to issue reputation data to a subject).
+- Base is a Data Issuer, with multiple Data Points (number of transactions, smart contracts deployed, ...), but it's not an Account. The account in this case is the wallet address.
+
+---
+
+## data-point.mdx
+---
+sidebar_position: 4
+---
+
+# Data Point
+
+A Data Point is specific type of reputation data about a given user.
+
+## Key Attributes:
+
+- A Data Point provides a verified fact about a user's reputation at a given point in time.
+- A Data Point is always associated with a [Data Issuer](/docs/protocol-concepts/data-issuer).
+- A Data Issuer can have multiple Data Points, but a Data Point only has one Data Issuer.
+- A Data Point only contains objective and verifiable data.
+- A Data Point doesn't store any scoring information; they can be use in multiple scoring systems.
+- Example:
+  - Data Issuer: `GitHub`
+  - Data Point: `Stars`
+  - Value: `[number of stars]`
+
+## **Variable** and I**mmutable** Data Points:
+
+- Immutable data points are simpler versions of variable data points.
+- **Variable Data Points** contain a value that can change over time.
+- Example: GitHub Stars, ETH Balance on Base
+- **Immutable Data Points** are only set once, and never recalculated again.
+- Example: Base Learn, KYC, First Transaction on Base
+
+## Categories of Data Points:
+
+- **Metrics**: Ongoing measurable activities (e.g., GitHub contributions, transactions)
+- **Achievements**: One-time accomplishments and permanent credentials (e.g., a hackathon win)
+- **Affiliations**: Memberships and group affiliations that can be lost or revoked (e.g., job or a DAO)
+- **Accounts**: Social profiles and other verifications (e.g., twitter, farcaster, github)
+
+## Scoring Tags
+
+- We use a **tag-based system** that determines how data points are used in [Scoring Systems](/docs/protocol-concepts/scoring-systems):
+  - Initial tags: `human`, `builder`, `creator`
+  - Data points can have multiple tags
+  - Scoring systems use tags to determine which data points to include
+
+---
+
+## event.mdx
+---
+sidebar_position: 5
+---
+
+# Event
+
+An Event is a historical record of changes to a user’s reputation data over time.
+
+Events to track how reputation changes over time, giving users better insights into their progress. Think of it like Etherscan for the Builder Score: users will be able to see not just their current reputation state, but the complete history of how they got there.
+
+Every change to reputation data is recorded as an Event with its old value, new value, and timestamp.
+
+## Key Attributes:
+
+- Represents a chronological log of changes to each [Data Point](/docs/protocol-concepts/data-point):
+- Each event stores: `old value`, `new value`, `timestamp`
+- An Event does not include scoring information but is used to calculate scores when processed.
+
+## Event vs Data Point
+
+- A [Data Point](/docs/protocol-concepts/data-point) shows the current state (e.g., total commits), and the Event tracks the history of changes leading to the current state.
+- Just like Etherscan, where you see both the current token balance (state) and the transactions (events) that built up to it.
+
+---
+
+## human-checkmark.mdx
+---
+sidebar_position: 8
+---
+
+# Human Checkmark
+
+A composable protocol primitive that helps identify real humans.
+
+## Human Verification
+
+A protocol primitive that aggregates verified PoH (Proof of Humanity) and KYC (Know Your Customer) data from trusted sources into a simple binary signal: verified or not.
+
+Any of the verifications below will automatically give users a "Human Checkmark" on Talent Protocol.
+
+| Data Issuer | Data Point Name            | Description                                                                                                                                                                   | Data Point Category                                    |
+| ----------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Binance     | Binance Account Bound      | Proves completion of identity verification on Binance, by verifying ownership of a [BABT](https://www.binance.com/en/BABT).                                                   | <span className="badge badge--primary">Identity</span> |
+| Coinbase    | Coinbase Verified Account  | Proves completion of [identity verification on Coinbase](https://www.coinbase.com/verify-document), by verifying an onchain attestation.                                      | <span className="badge badge--primary">Identity</span> |
+| Galxe       | Galxe Passport             | Proves completion of identity verification on Galxe, by verifying ownership of a [Galxe Passport](https://app.galxe.com/passport) SBT.                                        | <span className="badge badge--primary">Identity</span> |
+| human.tech  | Human ID                   | Proves completion of identity verification with a government ID or ePassport on [Human.tech](https://silksecure.net/holonym/diff-wallet), by verifying ownership of a ZK SBT. | <span className="badge badge--primary">Identity</span> |
+| World       | Verified Human             | Proves completion of [Proof of Personhood](https://world.org/world-id) verification with World ID.                                                                            | <span className="badge badge--primary">Identity</span> |
+| self.xyz    | Self Identity Verification | Proves completion of passport verification with [self.xyz](https://self.xyz/).                                                                                                | <span className="badge badge--primary">Identity</span> |
+
+## Accessible via API
+
+The best part? This primitive is accessible to any developer through our API, making human verification a building block for the entire ecosystem.
+
+---
+
+## profile.mdx
+---
+sidebar_position: 3
+---
+
+# Profile
+
+A Profile is the entity in Talent Protocol that represents a builder's digital identity and reputation.
+
+## Profile Types
+
+- **User Profile**: A profile connected to a verified Talent Protocol user
+- **Account Profile**: An independent profile representing an indexed Account not yet claimed by a User
+
+## Profile Properties
+
+Profiles contain several key properties that constitute a builder's identity:
+
+### Basic Information
+
+- `id`: Unique identifier for the profile
+- `name`: The builder's name
+- `display_name`: The displayed name that may differ from the primary name
+- `bio`: A short biography or description
+- `location`: Geographic location
+- `image_url`: Profile picture URL
+
+### Reputation Properties
+
+- `human_checkmark`: Boolean indicating if the profile owner has been verified as human
+- `onchain`: Boolean indicating if the profile has verified onchain presence
+- `tags`: Array of skill or interest tags associated with the profile
+- `calculating_score`: Boolean indicating if the profile's score is being recalculated
+
+### Technical Properties
+
+- `created_at`: Timestamp when the profile was created
+
+## Profile Search
+
+The [API](/docs/developers/talent-api/api-reference) provides advanced search capabilities for profiles based on:
+
+- Identity information (names, ENS domains, usernames)
+- Connected accounts (GitHub, wallet addresses, etc.)
+- Human verification status
+- Builder Score values and score credentials
+- Tags and interests
+
+See the [API Reference](/docs/developers/talent-api/api-reference) for detailed examples of profile search queries.
+
+---
+
+## scoring-systems/builder-score/builder-score-levels.mdx
+# Builder Score Levels
+
+Breakdown of the 6 Builder Score Levels and implementation guidelines for developers.
+
+Builder Score Levels provide a structured way to understand and interpret Builder Score values in the Talent Protocol ecosystem. These levels help both developers integrating our API and individual builders track progress and set goals.
+
+## Understanding Builder Score Levels
+
+Builder Score is an uncapped scoring system that measures a builder's verified reputation data across multiple categories. To make these scores more intuitive and actionable, we've established six distinct levels that represent increasing degrees of building activity and impact.
+
+Each level corresponds to a specific Builder Score range:
+
+| Level | Name         | Score   | Range                                                                                                                        |
+| ----- | ------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Novice       | 0-39    | Just getting started with the basics. They've connected some accounts and taken their first steps as a builder.              |
+| 2     | Apprentice   | 40-79   | They're building sporadically and starting to make their mark. Their contributions are starting to get noticed.              |
+| 3     | Practitioner | 80-119  | They've established themselves as serious builders with real impact. Their work speaks for itself across multiple platforms. |
+| 4     | Advanced     | 120-169 | They've built some impressive things and contributed to notable projects. Their reputation is solid and growing.             |
+| 5     | Expert       | 170-249 | They're among the top builders with an exceptional track record. People look to their work as an example.                    |
+| 6     | Master       | 250+    | They're one of the most accomplished builders in the ecosystem with contributions that have made a real difference.          |
+
+## Use Cases
+
+- **Base**: Offers discounted Basename registrations for builders at Level 3 (Practitioner) or higher
+- **Hackathons:** Prioritizes hackathon applications from builders at Level 4 (Advanced) or higher
+- **Communities**: Automatically approves membership for builders at Level 2 (Apprentice) or higher
+
+## Implementation Guide
+
+When integrating Builder Score into your app or protocol, you can use these levels to:
+
+- **Access Control**: Gate specific features or capabilities based on Builder Score Levels
+- **User Segmentation**: Create targeted experiences for different builder segments
+- **Reward Distribution**: Allocate rewards or incentives proportionally to builder levels
+- **Interface Design**: Visually represent levels with badges or other UI elements
+- **Governance Rights**: Allocate voting weight or proposal rights
+- **Recommended Level Requirements:**
+
+- General access and basic features: Level 1 (Novice)
+- Premium features and moderate incentives: Level 3 (Practitioner)
+- Exclusive access and significant incentives: Level 5 (Expert)
+
+## Onchain Level Badges
+
+Builders will be able to mint achievement badges for each Builder Score Level they reach. These badges:
+
+- Serve as permanent proof of achievement
+- Can be displayed on profiles across the web3 ecosystem
+- May unlock special perks from ecosystem partners
+- Create a collection that visually represents a builder's journey
+
+## Important Notes
+
+- **Absolute Values**: Builder Score Levels are based on absolute score values, not percentile ranks.
+- **Forward Evolution**: As our protocol adds more data points and users, the distribution of levels will naturally evolve.
+- **Periodic Review**: We review and may adjust level ranges periodically to maintain meaningful separation between tiers.
+- **Non-Decay**: Once you've minted a level badge, it remains in your collection even if your Builder Score temporarily decreases.
+
+---
+
+## scoring-systems/builder-score/index.mdx
+# Builder Score
+
+=============
+
+A scoring system to recognize real onchain builders.
+
+## What is the Builder Score?
+
+Builder Score is a numerical value that represents a user's reputation as an onchain builder.
+
+The Builder Score aims to distinguish builders from other types of crypto users, by valuing both the quantity and quality of their contributions. It reflects both "potential" (future growth) and "achievements" (proven track record).
+
+Users can leverage their Builder Score within Talent Protocol's growing partner ecosystem, while developers can easily add the Builder Score to their apps.
+
+Apps like [Basenames](https://x.com/TalentProtocol/status/1825995151275434439) or [Etherscan](https://x.com/TalentProtocol/status/1830974248363622607) already integrate with the Builder Score to bring more context to their users and to curate the best builders in crypto.
+
+## The "Builder Score" Scoring Framework
+
+All Talent Protocol scoring systems are composed of a selection of [Data Points](/docs/protocol-concepts/data-point). While we don't disclose the exact formula to prevent gaming, we can share that each Data Point is evaluated based on:
+
+1.  value conversion (when applicable)
+2.  signal strength
+3.  max score
+4.  multiplier (not publicly disclosed)
+
+### 1. Value Conversion
+
+For some Data Points it's helpful to normalized their numerical value before applying the scoring function, but this is an optional step.
+
+Examples:
+
+- Convert `twitter_account_age` from a `timestamp` to the `number of years` the account has.
+- Normalize `base_out_transactions` with a `sqrt` function to reduce the impact of large values, making the scoring system more balanced and fair, and ensuring big contributors don’t completely overpower smaller ones. This means that your first contributions matter more than later ones.
+- Invert `farcaster_social_capital_rank` value, so that the #1 ranked user has a higher value (and more points) than the last ranked user.
+
+### 2. Signal Strength
+
+Defines how strongly a given data point proves that the user is a real builder, and can have 3 possible values: `weak`, `medium`, `strong.`
+
+Examples:
+
+- Winning a ETHGlobal hackathon is a strong signal that someone is a real builder.
+- Simply having a GitHub account is a weak signal that someone is a real builder.
+
+### 3. Max Score
+
+Defines the maximum amount of points each Data Point can contribute to the overall Builder Score. We use the signal strength to help define the max score of each Data Point:
+
+- strong (up to 40 points)
+- medium (up to 20 points)
+- weak ( to 8 points)
+
+The mapping between signal strength and max score is just a framework for human decision, not enforced at the code level.
+
+### 4. Multiplier
+
+In the Builder Score, we use multipliers to convert the numerical value of a Data Point into a score measured in "points." These multipliers help standardize very different scales of Data Point values into a consistent scoring system.
+
+Although we don't disclose the exact multipliers used for each Data Point, users can understand the relative importance of each Data Point through the signal strength and max score values we provide.
+
+<details>
+  <summary id="examples">Examples</summary>
+
+- Data Point: Base Contracts Deployed (Mainnet)
+  - Value: 7 (number of contracts deployed)
+  - Multiplier: 0.2
+  - Max Score: 2
+  - Points: 1.4 (7\*0.2)
+- Data Point: GitHub Total Contributions
+  - Value: 1734
+  - Multiplier: 0.001
+  - Max Score: 15
+  - Points: 1.734 (1734\*0.001)
+
+</details>
+
+:::warning
+
+Builder Score is still experimental, so expect regular updates to its scoring formula.
+
+:::
+
+## Transparency and Formula Disclosure
+
+At Talent Protocol, we believe in transparency while maintaining the integrity of our scoring system. We disclose the general framework of our Builder Score calculation, including:
+
+- The Data Points we consider relevant
+- The signal strength classification for each Data Point
+- The maximum score potential for each Data Point
+
+However, to prevent gaming or artificial optimization of the system, we do not publicly disclose:
+
+- Specific multipliers for each Data Point
+- Exact conversion functions applied to normalize values
+- Detailed thresholds for achieving maximum scores
+
+This approach allows us to maintain the integrity of the Builder Score while still providing users with clear guidance on how to improve their scores through genuine contributions.
+
+## Summary
+
+The Builder Score represents 3 core decisions:
+
+1.  What Data Points are relevant to assess the reputation of a builder.
+2.  How strongly does each Data Point signal that the user is a real builder.
+3.  What should be the multiplier to convert each Data Point value into Builder Score points.
+
+The final Builder Score is the sum of all the points.
+
+Builder Score doesn’t have a maximum cap, so it’s likely to increase over time, as we add more integrations and possible credentials to the protocol.
+
+---
+
+## scoring-systems/creator-score.mdx
+# Creator Score
+
+A scoring system that identifies talent in content creation and creative contribution.
+
+## What is the Creator Score?
+
+Creator Score is a numerical value that represents a user's reputation as a content creator based on verified data across multiple platforms. Unlike traditional metrics that only consider follower count, Creator Score evaluates both quantity AND quality of creative output through verifiable signals.
+
+The Creator Score is designed to:
+
+- Help authentic creators gain recognition based on their actual contributions
+- Provide protocols, brands, and platforms with reliable data to identify top creative talent
+- Create a standardized measurement for creative impact and consistency
+- Reward consistent, high-quality content creation over mere popularity
+
+## Who is a Creator?
+
+While Builder Score focuses on software development, Creator Score targets those who share original content consistently. A creator is someone that produces creative output (text, image, video, audio, interactive) that provides value to others by informing, educating, entertaining, or inspiring.
+
+The Creator Score supports various creator types:
+
+- **Visual Artists**: Illustrators, photographers, painters, graphic designers, animators
+- **Writers**: Bloggers, journalists, essayists, poets, newsletter authors
+- **Audio Creators**: Musicians, podcasters, sound designers, voice artists
+- **Video Creators**: Filmmakers, vloggers, streamers, YouTube content producers
+- **Community & Memes**: KOLs, meme artists, community builders
+
+## Use Cases
+
+Creator Score serves multiple purposes in the ecosystem:
+
+- **For creators**: Objective verification of creative impact that can be shared across platforms
+- **For protocols**: Reliable method to identify authentic creators for rewards, grants, and partnerships
+- **For brands**: Data-driven discovery of talent for collaborations and sponsorships
+- **For apps**: Enhanced context about users' creative contributions and reputation
+
+## The "Creator Score" Scoring Framework
+
+The Creator Score uses the same technical framework as the [Builder Score](/docs/protocol-concepts/scoring-systems/builder-score) but with [data points](/docs/protocol-concepts/data-point) specifically relevant to creators. The final score is the sum of all data point scores with no maximum cap, and each data point is evaluated based on: signal strength, max score, multiplier (not publicly disclosed), value conversion (optional).
+
+### **Signal Strength**
+
+- The first step is defining how strongly a given data point signals someone is a real creator
+- There's 3 possible levels:
+  - **Strong**: Up to 40 points (e.g., zora rewards earned)
+  - **Medium**: Up to 20 points (e.g., farcaster followers)
+  - **Weak**: Up to 8 points (e.g., twitter account age)
+
+### **Max Score**
+
+- Maximum amount of points each data point can contribute to the Creator Score, based on the signal strength
+
+### **Multiplier**
+
+- Each data point has a multiplier to convert its readable value into points
+- The multiplier is not publicly disclosed to prevent gaming (same approach as Builder Score)
+- Example: for twitter followers, if the multiplier is 0.01 and I have 1,000 followers, I will receive 10 points
+
+### **Value Conversion**
+
+- Some data point original values are converted to normalized metrics.
+- Example: We us a square root function for metrics like total followers or NFT earnings to prevent large creators from completely dominating
+
+## Creator Score Levels
+
+Similar to Builder Score, Creator Score is organized into levels to help users understand their standing:
+
+| Level | Score Range | Description                                                                            |
+| ----- | ----------- | -------------------------------------------------------------------------------------- |
+| 1     | 0-39        | Just getting started. Has created some content and taken first steps as a creator.     |
+| 2     | 40-79       | Creating content regularly with growing engagement. Beginning to build an audience.    |
+| 3     | 80-119      | Established creator with consistent output and meaningful engagement across platforms. |
+| 4     | 120-169     | Accomplished creator with significant audience and proven monetization.                |
+| 5     | 170-249     | Top-tier creator with substantial influence and recognition in their domain.           |
+| 6     | 250+        | Elite creator with exceptional impact, audience, and earnings.                         |
+
+## Key Metrics
+
+The Creator Score considers various metrics organized into three categories:
+
+### 1. Creation Metrics
+
+- Content Published - total number of content pieces published
+- Content Frequency - number of unique pieces published per week/month
+- Publishing Streak - consecutive weeks/months with published content
+- Creative Longevity - time since first published content
+
+### 2. Engagement Metrics
+
+- Followers and subscriber counts across platforms
+- Follower-to-following ratio
+- Engagement rates and interactions with content
+
+### 3. Economic Metrics
+
+- Total earnings and rewards
+- Unique holders/collectors/paid subscribers
+- NFT mints, coin purchases or price
+- Secondary market activity (NFT/coin trading)
+- Collector loyalty/repeat engagement
+
+---
+
+## scoring-systems/index.mdx
+# Scoring Systems
+
+A Scoring System is a set of rules that convert Data Points into numerical reputation scores.
+
+A Scoring System assigns numerical scores (measured in "points") to a selection of [Data Points](/docs/protocol-concepts/data-point).
+
+Talent Protocol intentionally separates Data Points (objective data) from Scoring Systems (subjective data). Both are autonomous and composable protocol primitives.
+
+## Different Scores
+
+Multiple scoring systems can exist in parallel, with each designed to evaluate talent in a specific domain:
+
+- [Builder Score](/docs/protocol-concepts/scoring-systems/builder-score) identifies people creating software
+- [Creator Score](/docs/protocol-concepts/scoring-systems/creator-score) recognizes content and community builders
+- Other scores coming soon
+
+Each scoring system operates independently with its own set of relevant Data Points and scoring logic, tailored to what matters for their specific persona.
+
+This modular approach allows Talent Protocol to serve different communities with metrics that genuinely reflect their unique contributions, rather than forcing diverse talents into the same box.
+
+Reach out if you want to create a custom scoring system.
+
+## Scoring Framework
+
+A Scoring System is composed of:
+
+1.  a **selection of Data Points** to be considered for this particular score
+2.  a **value conversion** (optional) to normalize Data Point values (ex.`timestamp_to_year` or `sqrt)`
+3.  a **signal strength** (strong, medium, or weak) attributed to each Data Point
+4.  a **maximum score** (in "points") that each Data Point can contribute to the overall score
+5.  a **scoring function** or **condition** that converts the current value of a Data Point into a numerical score (measured in "points")
+
+Scoring systems are absolute, meaning they don’t include any form of normalization or percentile-based approach. The final score should be a simple sum of all Data Point individual scores.
+
+This framework intends to keep every scoring system simple, transparent and scalable.
+
+## Calculating a Score
+
+To calculate a score, Talent Protocol will follow the steps below:
+
+1.  Fetch new data for each account and store them in the respective Data Point.
+2.  If the Data Point value changed, we create an [Event](/docs/protocol-concepts/event) (coming soon).
+3.  We then apply the scoring framework to all Data Points with a value change.
+4.  If there are multiple sources for the same data point (example: a user with multiples wallet addresses), we pick the one with the highest value.
+
+## Score Credentials
+
+A Score Credential is the connection between a [Data Point](/docs/protocol-concepts/data-point) and a Scoring System. It defines:
+
+1.  How much a specific Data Point contributes to a given score
+2.  The criteria for evaluating the Data Point's value
+3.  The maximum points this credential can add to the total score
+
+## Example
+
+For the Data Point "GitHub Stars":
+
+- In the Builder Score system, this might be worth up to 15 points (strong signal)
+- In the Creator Score system, this might be worth only 2 points (weak signal)
+
+Similarly, for the Data Point "Zora Earnings":
+
+- In the Creator Score system, this might be worth up to 30 points (strong signal)
+- In the Builder Score system, this might be worth only 5 points (weak signal)
+
+---
+
+## socials.mdx
+---
+sidebar_position: 9
+---
+
+# Socials
+
+Socials represent a builder's connected social media accounts and their associated data.
+
+## What are Socials?
+
+In Talent Protocol, a Social is a verified connection to a social platform like X/Twitter, Farcaster, Lens, or LinkedIn that:
+
+- Provides additional context about a builder's reputation
+- Contains metadata such as follower count, following count, and profile details
+- Has been verified through OAuth or other verification methods
+
+## Social Properties
+
+Each Social connection includes:
+
+- `source`: The platform (e.g., "lens", "farcaster", "github")
+- `owner`: The account identifier on that platform
+- `follower_count`: Number of followers
+- `following_count`: Number of accounts followed
+- `display_name`: Display name on that platform
+- `name`: Username on the platform
+- `profile_url`: Link to the social profile
+- `image_url`: Profile picture URL
+- `bio`: Profile description
+- `location`: Location listed on the social platform
+- `owned_since`: When the account was first verified
+
+## Accessing Social Data
+
+The [API](/docs/developers/talent-api/api-reference) provides dedicated endpoints to access a profile's social connections, allowing developers to:
+
+- Verify cross-platform identity
+- Assess social credibility
+- Display social proof in applications
+
+---
+
+## user.mdx
+---
+sidebar_position: 1
+---
+
+# User
+
+A User represents an individual that signed up on talentprotocol.com
+
+A **User** represents an individual that signed up on talentprotocol.com to verify their reputation data and increase their [Builder Score](/docs/protocol-concepts/scoring-systems/builder-score), by connecting multiple [**accounts**](/docs/protocol-concepts/account)**.**
+
+An [**Account**](/docs/protocol-concepts/account) represents a connection with a third-party entity (e.g., Wallet Address, GitHub, X, LinkedIn) that feeds reputation data into Talent Protocol. Accounts can exist independently or be linked to a user.
+
+## Key Attributes:
+
+- Each user has a unique identifier (UUID) in the Talent database, ensuring every user is distinct.
+- Users have a single profile URL aggregating data from all associated accounts.
+  - `talentprotocol.com/UUID`
+- A user can connect multiple [accounts](/docs/protocol-concepts/account), but an account can only be linked to one user at a time.
+- A user aggregates reputation data from all its connected [accounts](/docs/protocol-concepts/account) into a unified [Builder Score](/docs/protocol-concepts/scoring-systems/builder-score).
+- A user is be able to sign-in to the Talent Protocol App with any account that they connected.
+- For now, only the Talent Protocol app can create, update or delete users from the database. Ecosystem apps can only read data.
+
+## Types of Users:
+
+- **User**: when we mention the term "user", we're referring to all individuals who signed up at talentprotocol.com, even if they haven’t connected a wallet or other accounts yet.
+- **Onchain User**: Users with a verified EVM address added to the onchain Talent Registry.
+- **Verified User**: Users who have earned a [Human Checkmark](/docs/protocol-concepts/human-checkmark).
+- **Paying User**: Users who have spent funds on Talent Protocol, via the app or smart contracts.
+- **Private User**: Users hidden from the app and API outputs, but still present in the database.
+
+---
+
