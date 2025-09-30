@@ -1,0 +1,2530 @@
+# Overview
+
+> The best way to build Mini Apps on Base.
+
+MiniKit is the official SDK for building Mini Apps that work seamlessly across Base App and other Farcaster clients. It provides React hooks, context management, and wallet integration that eliminates the complexity of building social-native applications.
+
+## Why MiniKit?
+
+<CardGroup cols={2}>
+  <Card title="Seamless Integration" icon="link">
+    Part of OnchainKit allowing for complete onchain app development with shared providers and configuration.
+  </Card>
+
+  <Card title="Social-Native" icon="users">
+    Built specifically for Farcaster's frame-based architecture with native social features.
+  </Card>
+
+  <Card title="Wallet Abstraction" icon="wallet">
+    Simplified wallet connections and transaction flows with automatic provider detection.
+  </Card>
+
+  <Card title="Cross-Client" icon="mobile">
+    Works across Base App, Farcaster, and other clients with consistent behavior.
+  </Card>
+</CardGroup>
+
+## Architecture
+
+MiniKit consists of three main components:
+
+### `<OnchainKitProvider miniKit={{ enabled: true }}>`
+
+React context provider that configures:
+
+* Wagmi and react-query setup
+* Chain and API key configuration
+* Theme and appearance settings
+* Farcaster connector integration
+
+### Hooks
+
+React hooks for frame interactions:
+
+* **Frame Management**: `useMiniKit`, `useAddFrame`, `useClose`
+* **Navigation**: `useOpenUrl`, `useViewProfile`, `useViewCast`
+* **Social**: `useComposeCast`, `useNotification`
+* **Authentication**: `useAuthenticate`
+* **UI**: `usePrimaryButton`
+
+### CLI Tools
+
+Command-line utilities for:
+
+* Project scaffolding with `npx create-onchain --mini`
+* Manifest generation with `npx create-onchain --manifest`
+* Development workflow automation
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card title="New Project" icon="plus" href="/mini-apps/quickstart/new-apps/install">
+    Create a new Mini App from scratch using the CLI scaffolding tool.
+  </Card>
+
+  <Card title="Existing App" icon="code" href="/mini-apps/quickstart/existing-apps/install">
+    Add MiniKit to your existing Next.js application.
+  </Card>
+</CardGroup>
+
+## Key Concepts
+
+### Frame Lifecycle
+
+Mini Apps run within Farcaster frames and must signal readiness:
+
+1. **Initialize** MiniKitProvider in your app root
+2. **Signal readiness** with `setFrameReady()` in your main component
+3. **Handle interactions** through MiniKit hooks
+
+### Context vs Authentication
+
+* **Context data** (`useMiniKit().context`) provides user info but can be spoofed
+* **Authentication** (`useAuthenticate()`) provides cryptographically verified user identity
+* Always use authentication for security-critical operations
+
+### Cross-Client Compatibility
+
+MiniKit automatically detects the client environment and adapts:
+
+* **Base App**: Native wallet integration, enhanced features
+* **Farcaster**: Standard Farcaster protocol compliance
+* **Other clients**: Graceful fallbacks and compatibility modes
+
+## Technical Reference
+
+<CardGroup cols={2}>
+  <Card title="Provider & Initialization" icon="settings" href="/mini-apps/technical-reference/minikit/provider-and-initialization">
+    Configure MiniKitProvider and initialize frame context.
+  </Card>
+
+  <Card title="Hooks Reference" icon="code" href="/mini-apps/technical-reference/minikit/hooks/useMiniKit">
+    Complete reference for all MiniKit React hooks.
+  </Card>
+</CardGroup>
+
+
+# Provider & Initialization
+
+> Configure OnchainKitProvider and initialize frame context
+
+## OnchainKitProvider Setup
+
+The OnchainKitProvider wraps your app and provides MiniKit context to all child components. It configures wagmi, react-query, and the Farcaster connector automatically.
+
+```tsx app/providers.tsx
+import { OnchainKitProvider } from '@coinbase/onchainkit';
+import { ReactNode } from 'react';
+import { base } from 'wagmi/chains';
+
+export function Providers({ children }: { children: ReactNode }) {
+  return (
+    <OnchainKitProvider
+      apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
+      chain={base}
+      config={{
+        appearance: {
+          mode: 'auto',
+          theme: 'default',
+          name: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME,
+          logo: process.env.NEXT_PUBLIC_ICON_URL,
+        },
+      }}
+      miniKit={{
+        enabled: true
+      }}
+    >
+      {children}
+    </OnchainKitProvider>
+  );
+}
+```
+
+<Tip>
+  The provider configures wagmi and react-query and uses the Farcaster connector when available.
+</Tip>
+
+## Provider Configuration
+
+### Required Props
+
+| Prop     | Type   | Description                                              |
+| -------- | ------ | -------------------------------------------------------- |
+| `apiKey` | string | Your OnchainKit API key from Coinbase Developer Platform |
+| `chain`  | Chain  | The blockchain network (typically `base`)                |
+
+### Optional Configuration
+
+| Property                  | Type                        | Description                  |
+| ------------------------- | --------------------------- | ---------------------------- |
+| `config.appearance.mode`  | 'auto' \| 'light' \| 'dark' | Theme mode for UI components |
+| `config.appearance.theme` | string                      | Theme name for styling       |
+| `config.appearance.name`  | string                      | App name displayed in UI     |
+| `config.appearance.logo`  | string                      | Logo URL for branding        |
+
+## Frame Initialization
+
+Initialize MiniKit in your main component to signal frame readiness:
+
+```tsx app/App.tsx
+'use client';
+
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { useEffect } from 'react';
+
+export default function App() {
+  const { setFrameReady, isFrameReady } = useMiniKit();
+
+  useEffect(() => {
+    if (!isFrameReady) {
+      setFrameReady();
+    }
+  }, [setFrameReady, isFrameReady]);
+
+  return (
+    <div>
+      {/* Your app content */}
+    </div>
+  );
+}
+```
+
+## useMiniKit Hook
+
+The `useMiniKit` hook provides access to frame state and user context:
+
+```tsx any-component.tsx
+const { 
+  setFrameReady, 
+  isFrameReady, 
+  context 
+} = useMiniKit();
+```
+
+### Context Properties
+
+| Property               | Type    | Description                          |
+| ---------------------- | ------- | ------------------------------------ |
+| `context.user.fid`     | string  | Farcaster ID of the current user     |
+| `context.client.added` | boolean | Whether user has saved the Mini App  |
+| `context.location`     | string  | Where the Mini App was launched from |
+
+<Warning>
+  Context data can be spoofed and should not be used for authentication. Use `useAuthenticate` for secure user verification.
+</Warning>
+
+
+# useMiniKit
+
+> Access frame context and control readiness state
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Info>
+  Primary hook for accessing MiniKit frame context and managing frame readiness. This hook provides essential Mini App state and user context information.
+</Info>
+
+## Returns
+
+<ResponseField name="context" type="MiniKitContext">
+  Frame context information provided by the host application.
+
+  <Expandable title="MiniKitContext properties">
+    <ResponseField name="user" type="object">
+      User information from the host application.
+
+      <Expandable title="User properties">
+        <ResponseField name="fid" type="string">
+          Farcaster ID of the current user. Can be spoofed - use for analytics only.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="client" type="object">
+      Information about the host client application.
+
+      <Expandable title="Client properties">
+        <ResponseField name="added" type="boolean">
+          Whether the user has saved this Mini App to their collection.
+        </ResponseField>
+
+        <ResponseField name="clientFid" type="string">
+          Farcaster ID of the host client. Base App: "309857".
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="location" type="string">
+      Where the Mini App was launched from (e.g., "cast", "launcher", "notification").
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="isFrameReady" type="boolean">
+  Whether the frame has signaled readiness to the host application.
+</ResponseField>
+
+<ResponseField name="setFrameReady" type="() => void">
+  Function to signal frame readiness to the host application. Call this once your Mini App has finished loading.
+</ResponseField>
+
+<RequestExample>
+  ```tsx app/App.tsx
+  'use client';
+
+  import { useMiniKit } from '@coinbase/onchainkit/minikit';
+  import { useEffect } from 'react';
+
+  export default function MyMiniApp() {
+    const { context, isFrameReady, setFrameReady } = useMiniKit();
+
+    useEffect(() => {
+      if (!isFrameReady) {
+        setFrameReady();
+      }
+    }, [setFrameReady, isFrameReady]);
+
+    return (
+      <div>
+        <h1>Welcome, User {context.user.fid}!</h1>
+        <p>Launched from: {context.location}</p>
+        {context.client.added && (
+          <p>✅ You've saved this app!</p>
+        )}
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/ClientSpecificFeatures.tsx
+  import { useMiniKit } from '@coinbase/onchainkit/minikit';
+
+  export default function ClientSpecificFeatures() {
+    const { context } = useMiniKit();
+    
+    const isBaseApp = context.client.clientFid === '309857';
+    const isFarcaster = context.client.clientFid === '1';
+
+    return (
+      <div>
+        {isBaseApp && (
+          <div>Base App specific features</div>
+        )}
+        {isFarcaster && (
+          <div>Farcaster specific features</div>
+        )}
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/AnalyticsTracker.tsx
+  import { useMiniKit } from '@coinbase/onchainkit/minikit';
+  import { useEffect } from 'react';
+
+  export default function AnalyticsTracker() {
+    const { context } = useMiniKit();
+
+    useEffect(() => {
+      // ✅ Safe: Use context for analytics
+      analytics.track('mini_app_opened', {
+        userFid: context.user.fid,
+        client: context.client.clientFid,
+        launchLocation: context.location,
+        hasAddedApp: context.client.added
+      });
+    }, [context]);
+
+    return <div>App content...</div>;
+  }
+  ```
+</RequestExample>
+
+## Usage Notes
+
+### Frame Readiness
+
+Always call `setFrameReady()` once your Mini App has finished initial loading:
+
+```tsx components/FrameReady.tsx
+useEffect(() => {
+  if (!isFrameReady) {
+    setFrameReady();
+  }
+}, [setFrameReady, isFrameReady]);
+```
+
+### Context Data Security
+
+<Warning>
+  Context data can be spoofed by malicious actors. Never use context data for authentication or security-critical operations. Use `useAuthenticate` for verified user identity.
+</Warning>
+
+```tsx
+// ❌ Don't use for authentication
+const isAuthenticated = !!context.user.fid; // Can be spoofed!
+
+// ✅ Use for analytics and UX hints only
+const userHint = context.user.fid; // For analytics tracking
+```
+
+### Client Detection
+
+Use client detection to provide platform-specific experiences:
+
+```tsx components/ClientDetection.tsx
+const isBaseApp = context.client.clientFid === '309857';
+const isFarcaster = context.client.clientFid === '1';
+
+if (isBaseApp) {
+  // Enable Base App specific features
+}
+```
+
+<Info>
+  The `useMiniKit` hook must be used within a component that's wrapped by `MiniKitProvider`. This hook provides the foundation for all Mini App functionality and should be one of the first hooks you use in your application.
+</Info>
+
+# useOpenUrl
+
+> Open URLs within or outside the frame context
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Info>
+  Opens URLs in the appropriate context - either within the Mini App environment or in external browsers. Handles cross-client compatibility automatically.
+</Info>
+
+## Returns
+
+<ResponseField name="openUrl" type="(url: string) => void">
+  Function that opens the specified URL. Behavior depends on the URL type and client capabilities.
+
+  <ParamField body="url" type="string" required>
+    The URL to open. Can be http/https links, deep links, or other URI schemes.
+  </ParamField>
+</ResponseField>
+
+<RequestExample>
+  ```tsx components/ExternalLinks.tsx
+  import { useOpenUrl } from '@coinbase/onchainkit/minikit';
+
+  export default function ExternalLinks() {
+    const openUrl = useOpenUrl();
+
+    return (
+      <div className="external-links">
+        <button onClick={() => openUrl('https://base.org')}>
+          Visit Base.org
+        </button>
+        <button onClick={() => openUrl('https://twitter.com/base')}>
+          Follow on Twitter
+        </button>
+        <button onClick={() => openUrl('https://discord.gg/basechain')}>
+          Join Discord
+        </button>
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/SmartLink.tsx
+  import { useOpenUrl } from '@coinbase/onchainkit/minikit';
+
+  export default function SmartLink({ href, children, className }) {
+    const openUrl = useOpenUrl();
+
+    const handleClick = (e) => {
+      e.preventDefault();
+      openUrl(href);
+    };
+
+    return (
+      <a 
+        href={href} 
+        onClick={handleClick}
+        className={className}
+      >
+        {children} ↗
+      </a>
+    );
+  }
+  ```
+</RequestExample>
+
+<Warning>
+  URLs opened with `useOpenUrl` may open in different contexts depending on the client. Don't rely on specific opening behavior for critical functionality.
+</Warning>
+
+<Info>
+  `useOpenUrl` automatically handles cross-client compatibility and provides the best user experience for external navigation.
+</Info>
+
+
+# useClose
+
+> Programmatically close the Mini App frame
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Info>
+  Allows Mini Apps to close themselves programmatically. Useful for completion flows, cancellation actions, or after successful operations.
+</Info>
+
+## Returns
+
+<ResponseField name="close" type="() => void">
+  Function that closes the Mini App frame and returns the user to the host application.
+</ResponseField>
+
+<RequestExample>
+  ```tsx components/CloseButton.tsx
+  import { useClose } from '@coinbase/onchainkit/minikit';
+
+  export default function CloseButton() {
+    const close = useClose();
+
+    return (
+      <button onClick={close} className="close-btn">
+        ✕ Close
+      </button>
+    );
+  }
+  ```
+
+  ```tsx components/PurchaseFlow.tsx
+  import { useClose } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  export default function PurchaseFlow() {
+    const close = useClose();
+    const [isComplete, setIsComplete] = useState(false);
+
+    const handlePurchase = async () => {
+      try {
+        await processPurchase();
+        setIsComplete(true);
+        
+        // Auto-close after successful purchase
+        setTimeout(() => {
+          close();
+        }, 2000);
+      } catch (error) {
+        console.error('Purchase failed:', error);
+      }
+    };
+
+    if (isComplete) {
+      return (
+        <div className="success-screen">
+          <h2>✅ Purchase Complete!</h2>
+          <p>Closing in 2 seconds...</p>
+          <button onClick={close}>Close Now</button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="purchase-flow">
+        <button onClick={handlePurchase}>Complete Purchase</button>
+        <button onClick={close}>Cancel</button>
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/ConfirmClose.tsx
+  import { useClose } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  export default function ConfirmClose() {
+    const close = useClose();
+    const [showConfirm, setShowConfirm] = useState(false);
+
+    const handleCloseRequest = () => {
+      setShowConfirm(true);
+    };
+
+    const confirmClose = () => {
+      // Save any pending data
+      savePendingChanges();
+      close();
+    };
+
+    if (showConfirm) {
+      return (
+        <div className="confirm-dialog">
+          <h3>Close Mini App?</h3>
+          <p>Any unsaved changes will be lost.</p>
+          <div className="actions">
+            <button onClick={confirmClose}>Yes, Close</button>
+            <button onClick={() => setShowConfirm(false)}>Cancel</button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="app-content">
+        <button onClick={handleCloseRequest}>Exit</button>
+        {/* Your app content */}
+      </div>
+    );
+  }
+  ```
+</RequestExample>
+
+## Usage Patterns
+
+### Completion Flows
+
+Close automatically after successful operations:
+
+```tsx components/CompletionFlow.tsx
+const handleGameComplete = async () => {
+  await saveScore(finalScore);
+  
+  // Show completion screen briefly
+  setShowCompletion(true);
+  
+  // Auto-close after celebration
+  setTimeout(close, 3000);
+};
+```
+
+### Navigation Replacement
+
+Use close instead of navigation for simple flows:
+
+```tsx components/NavigationReplacement.tsx
+// Instead of navigating back, close the frame
+const handleCancel = () => {
+  if (hasUnsavedChanges) {
+    confirmAndClose();
+  } else {
+    close();
+  }
+};
+```
+
+### Error Recovery
+
+Provide escape routes for error states:
+
+```tsx components/ErrorScreen.tsx
+if (hasUnrecoverableError) {
+  return (
+    <div className="error-screen">
+      <h2>Something went wrong</h2>
+      <p>Please try again later</p>
+      <button onClick={close}>Close</button>
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+### User Experience
+
+* **Confirm important actions**: Ask before closing if user has unsaved work
+* **Provide feedback**: Show completion states before auto-closing
+* **Quick escape**: Always provide a way to close, especially in error states
+
+### Technical Considerations
+
+* **Save state**: Persist important data before closing
+* **Clean up**: Cancel ongoing requests or timers
+* **Analytics**: Track close events for UX insights
+
+```tsx components/HandleClose.tsx
+const handleClose = () => {
+  // Clean up
+  cancelPendingRequests();
+  clearIntervals();
+  
+  // Track analytics
+  analytics.track('mini_app_closed', {
+    session_duration: Date.now() - sessionStart,
+    completion_state: currentState
+  });
+  
+  // Close
+  close();
+};
+```
+
+<Info>
+  `useClose` provides a clean exit for Mini Apps. Use it thoughtfully to create polished user experiences that feel native to the host application flow.
+</Info>
+
+
+# usePrimaryButton
+
+> Configure and handle the persistent primary button
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Info>
+  Configures a persistent primary button that appears at the bottom of the Mini App frame. Perfect for global actions that should always be accessible.
+</Info>
+
+## Parameters
+
+<ParamField body="options" type="SetPrimaryButtonOptions" required>
+  Configuration object for the primary button appearance and behavior.
+
+  <Expandable title="SetPrimaryButtonOptions properties">
+    <ParamField body="text" type="string" required>
+      The text to display on the primary button.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="callback" type="() => void" required>
+  Function to execute when the primary button is clicked.
+</ParamField>
+
+<RequestExample>
+  ```tsx components/GameComponent.tsx
+  import { usePrimaryButton } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  enum GameState {
+    RUNNING = 'running',
+    PAUSED = 'paused',
+    STOPPED = 'stopped'
+  }
+
+  export default function GameComponent() {
+    const [gameState, setGameState] = useState(GameState.STOPPED);
+
+    // Configure primary button based on game state
+    usePrimaryButton(
+      { 
+        text: gameState === GameState.RUNNING ? 'PAUSE GAME' : 'START GAME' 
+      },
+      () => {
+        setGameState(
+          gameState === GameState.RUNNING 
+            ? GameState.PAUSED 
+            : GameState.RUNNING
+        );
+      }
+    );
+
+    return (
+      <div className="game-container">
+        <h2>Game Status: {gameState}</h2>
+        {/* Game content */}
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/FormComponent.tsx
+  import { usePrimaryButton } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  export default function FormComponent() {
+    const [formData, setFormData] = useState({ name: '', email: '' });
+    const [isValid, setIsValid] = useState(false);
+
+    // Dynamic button text and action based on form state
+    usePrimaryButton(
+      { 
+        text: isValid ? 'Submit Form' : 'Complete Form First' 
+      },
+      () => {
+        if (isValid) {
+          handleSubmit();
+        } else {
+          // Focus first empty field
+          focusFirstEmptyField();
+        }
+      }
+    );
+
+    const handleSubmit = async () => {
+      await fetch('/api/submit', {
+        method: 'POST',
+        body: JSON.stringify(formData)
+      });
+    };
+
+    return (
+      <form>
+        <input 
+          value={formData.name}
+          onChange={(e) => {
+            setFormData({ ...formData, name: e.target.value });
+            setIsValid(e.target.value && formData.email);
+          }}
+          placeholder="Name"
+        />
+        <input 
+          value={formData.email}
+          onChange={(e) => {
+            setFormData({ ...formData, email: e.target.value });
+            setIsValid(formData.name && e.target.value);
+          }}
+          placeholder="Email"
+        />
+      </form>
+    );
+  }
+  ```
+
+  ```tsx components/CheckoutComponent.tsx
+  import { usePrimaryButton } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  export default function CheckoutComponent() {
+    const [step, setStep] = useState('cart'); // cart, shipping, payment, complete
+
+    const getButtonConfig = () => {
+      switch (step) {
+        case 'cart':
+          return { text: 'Proceed to Shipping', action: () => setStep('shipping') };
+        case 'shipping':
+          return { text: 'Proceed to Payment', action: () => setStep('payment') };
+        case 'payment':
+          return { text: 'Complete Purchase', action: () => processPurchase() };
+        case 'complete':
+          return { text: 'Continue Shopping', action: () => setStep('cart') };
+        default:
+          return { text: 'Next', action: () => {} };
+      }
+    };
+
+    const config = getButtonConfig();
+
+    usePrimaryButton(
+      { text: config.text },
+      config.action
+    );
+
+    const processPurchase = async () => {
+      // Handle purchase logic
+      setStep('complete');
+    };
+
+    return (
+      <div className="checkout-flow">
+        <h2>Step: {step}</h2>
+        {/* Step-specific content */}
+      </div>
+    );
+  }
+  ```
+</RequestExample>
+
+## Usage Patterns
+
+### Global State Management
+
+The primary button is perfect for actions that affect the entire app:
+
+```tsx components/GlobalStateExamples.tsx
+// Game controls
+usePrimaryButton(
+  { text: isPlaying ? 'Pause' : 'Play' },
+  toggleGameState
+);
+
+// Modal controls  
+usePrimaryButton(
+  { text: 'Close' },
+  closeModal
+);
+```
+
+### Form Submission
+
+Use for primary form actions:
+
+```tsx components/FormSubmit.tsx
+usePrimaryButton(
+  { text: isValid ? 'Submit' : 'Complete Required Fields' },
+  handleFormSubmission
+);
+```
+
+### Multi-Step Flows
+
+Navigate through complex workflows:
+
+```tsx components/MultiStepFlow.tsx
+usePrimaryButton(
+  { text: getStepButtonText(currentStep) },
+  () => advanceToNextStep()
+);
+```
+
+## Best Practices
+
+### Button Text Guidelines
+
+* **Keep it action-oriented**: "Start Game", "Submit Order", "Continue"
+* **Be specific**: "Save Changes" vs generic "Submit"
+* **Indicate state**: "Pause Game" when playing, "Resume Game" when paused
+* **Stay concise**: Aim for 1-3 words when possible
+
+### Layout Considerations
+
+* The primary button appears at the bottom of the frame
+* **Don't duplicate actions**: Avoid having the same action as an in-content button
+* **Consider mobile**: Button is optimized for thumb accessibility
+* **Test across clients**: Button appearance may vary between Farcaster clients
+
+### Performance Tips
+
+* **Memoize callbacks**: Use `useCallback` for complex button handlers
+* **Avoid frequent changes**: Don't update button text on every render
+* **Batch state updates**: Update button config and app state together
+
+```tsx components/HandlePrimaryAction.tsx
+import { useCallback } from 'react';
+
+const handlePrimaryAction = useCallback(() => {
+  // Expensive operation
+  performComplexAction();
+}, [dependencies]);
+
+usePrimaryButton(
+  { text: 'Process Data' },
+  handlePrimaryAction
+);
+```
+
+<Warning>
+  The primary button is persistent across your entire Mini App session. Only use `usePrimaryButton` once per component tree to avoid conflicts.
+</Warning>
+
+<Info>
+  The primary button provides a native, accessible way to surface your most important action. It's especially effective for games, forms, and multi-step workflows where users need consistent access to the next action.
+</Info>
+
+
+# useViewProfile
+
+> Navigate to Farcaster profiles from your Mini App
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Info>
+  Opens Farcaster user profiles within the host application. Defaults to the current user's profile if no FID is specified.
+</Info>
+
+## Parameters
+
+<ParamField body="fid" type="string" optional>
+  The Farcaster ID of the profile to view. If not provided, defaults to the current user's FID from the MiniKit context.
+</ParamField>
+
+## Returns
+
+<ResponseField name="viewProfile" type="() => void">
+  Function that opens the specified Farcaster profile when called.
+</ResponseField>
+
+<RequestExample>
+  ```tsx components/ProfileButton.tsx
+  import { useViewProfile } from '@coinbase/onchainkit/minikit';
+
+  export default function ProfileButton() {
+    const viewProfile = useViewProfile(); // Uses current user's FID
+
+    return (
+      <button onClick={viewProfile}>
+        View My Profile
+      </button>
+    );
+  }
+  ```
+
+  ```tsx components/UserCard.tsx
+  import { useViewProfile } from '@coinbase/onchainkit/minikit';
+
+  export default function UserCard({ userFid, userName }) {
+    const viewProfile = useViewProfile(userFid);
+
+    return (
+      <div className="user-card">
+        <h3>{userName}</h3>
+        <button onClick={viewProfile}>
+          View Profile
+        </button>
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/Leaderboard.tsx
+  import { useViewProfile } from '@coinbase/onchainkit/minikit';
+
+  export default function Leaderboard({ players }) {
+    return (
+      <div className="leaderboard">
+        <h2>Top Players</h2>
+        {players.map((player, index) => (
+          <PlayerRow 
+            key={player.fid}
+            player={player}
+            rank={index + 1}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  function PlayerRow({ player, rank }) {
+    const viewProfile = useViewProfile(player.fid);
+
+    return (
+      <div className="player-row">
+        <span className="rank">#{rank}</span>
+        <span className="name">{player.name}</span>
+        <span className="score">{player.score}</span>
+        <button 
+          onClick={viewProfile}
+          className="profile-btn"
+        >
+          View Profile
+        </button>
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/SocialActions.tsx
+  import { useViewProfile, useMiniKit } from '@coinbase/onchainkit/minikit';
+
+  export default function SocialActions() {
+    const { context } = useMiniKit();
+    const viewMyProfile = useViewProfile(); // Current user
+    const viewHostProfile = useViewProfile(context.client.clientFid); // Host app profile
+
+    return (
+      <div className="social-actions">
+        <button onClick={viewMyProfile}>
+          My Profile
+        </button>
+        
+        <button onClick={viewHostProfile}>
+          View {context.client.clientFid === '309857' ? 'Base App' : 'Host'} Profile
+        </button>
+      </div>
+    );
+  }
+  ```
+</RequestExample>
+
+## Usage Patterns
+
+### User Discovery
+
+Enable users to explore profiles of other participants:
+
+```tsx components/ProfileList.tsx
+const ProfileList = ({ users }) => {
+  return (
+    <div className="user-list">
+      {users.map(user => (
+        <UserProfileCard 
+          key={user.fid}
+          fid={user.fid}
+          name={user.name}
+        />
+      ))}
+    </div>
+  );
+};
+
+const UserProfileCard = ({ fid, name }) => {
+  const viewProfile = useViewProfile(fid);
+  
+  return (
+    <div onClick={viewProfile} className="profile-card">
+      <h4>{name}</h4>
+      <span>FID: {fid}</span>
+    </div>
+  );
+};
+```
+
+### Social Gaming
+
+Connect players in multiplayer experiences:
+
+```tsx components/GameLobby.tsx
+const GameLobby = ({ players }) => {
+  return (
+    <div className="game-lobby">
+      <h3>Players in Game</h3>
+      {players.map(player => (
+        <PlayerChip key={player.fid} player={player} />
+      ))}
+    </div>
+  );
+};
+
+const PlayerChip = ({ player }) => {
+  const viewProfile = useViewProfile(player.fid);
+  
+  return (
+    <div className="player-chip" onClick={viewProfile}>
+      {player.username}
+    </div>
+  );
+};
+```
+
+### Creator Attribution
+
+Link to content creators and collaborators:
+
+```tsx components/ContentAttribution.tsx
+const ContentAttribution = ({ creator }) => {
+  const viewCreatorProfile = useViewProfile(creator.fid);
+  
+  return (
+    <div className="attribution">
+      <span>Created by</span>
+      <button 
+        onClick={viewCreatorProfile}
+        className="creator-link"
+      >
+        {creator.name}
+      </button>
+    </div>
+  );
+};
+```
+
+## Best Practices
+
+### User Experience
+
+* **Clear call-to-action**: Use descriptive button text like "View Profile" or user names
+* **Visual feedback**: Indicate clickable profile elements with appropriate styling
+* **Context awareness**: Show relevant profile actions based on the user's relationship
+
+### Performance Optimization
+
+* **Memoize profile handlers**: Use the same hook instance for the same FID
+* **Batch profile data**: Load profile information efficiently when displaying multiple users
+
+```tsx components/ProfileActions.tsx
+import { useMemo } from 'react';
+
+const ProfileActions = ({ userFid }) => {
+  const viewProfile = useViewProfile(userFid);
+  
+  // Memoize to avoid recreating the handler
+  const handleProfileView = useMemo(() => viewProfile, [viewProfile]);
+  
+  return (
+    <button onClick={handleProfileView}>
+      View Profile
+    </button>
+  );
+};
+```
+
+### Accessibility
+
+* **Keyboard navigation**: Ensure profile links are keyboard accessible
+* **Screen reader support**: Use semantic HTML and ARIA labels
+* **Focus management**: Handle focus appropriately when returning from profile views
+
+```tsx components/AccessibleProfileLink.tsx
+const AccessibleProfileLink = ({ fid, userName }) => {
+  const viewProfile = useViewProfile(fid);
+  
+  return (
+    <button 
+      onClick={viewProfile}
+      aria-label={`View ${userName}'s Farcaster profile`}
+    >
+      {userName}
+    </button>
+  );
+};
+```
+
+<Info>
+  Profile viewing behavior may vary between Farcaster clients. In Base App, profiles open within the app context. In other clients, the experience may differ based on their implementation.
+</Info>
+
+<Warning>
+  Always validate FIDs before passing them to `useViewProfile`. Invalid FIDs may cause errors or unexpected behavior in the host application.
+</Warning>
+
+
+# useComposeCast
+
+> Open the cast composer with prefilled content
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Info>
+  Opens the native cast composer with prefilled text and embeds. Essential for viral growth and social sharing within Mini Apps.
+</Info>
+
+## Returns
+
+<ResponseField name="composeCast" type="(params: ComposeCastParams) => void">
+  Function that opens the cast composer with specified content.
+
+  <Expandable title="ComposeCastParams properties">
+    <ParamField body="text" type="string" required>
+      The text content to prefill in the composer. Keep concise and engaging.
+    </ParamField>
+
+    <ParamField body="embeds" type="string[]">
+      Array of URLs to embed in the cast. Usually includes your Mini App URL for sharing.
+    </ParamField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+  ```tsx Basic Text Sharing
+  import { useComposeCast } from '@coinbase/onchainkit/minikit';
+
+  export default function ShareButton() {
+    const { composeCast } = useComposeCast();
+
+    const handleShare = () => {
+      composeCast({
+        text: 'Just completed the daily puzzle! 🧩'
+      });
+    };
+
+    return (
+      <button onClick={handleShare}>
+        Share Achievement
+      </button>
+    );
+  }
+  ```
+
+  ```tsx Share with App Embed
+  import { useComposeCast } from '@coinbase/onchainkit/minikit';
+
+  export default function ShareAppButton() {
+    const { composeCast } = useComposeCast();
+
+    const handleShareApp = () => {
+      composeCast({
+        text: 'Check out this amazing Mini App!',
+        embeds: [window.location.href]
+      });
+    };
+
+    return (
+      <button onClick={handleShareApp}>
+        Share Mini App
+      </button>
+    );
+  }
+  ```
+
+  ```tsx Strategic Achievement Sharing
+  import { useComposeCast } from '@coinbase/onchainkit/minikit';
+
+  export default function GameComplete({ score, level }) {
+    const { composeCast } = useComposeCast();
+
+    const shareAchievement = () => {
+      composeCast({
+        text: `🎉 Just hit level ${level} with ${score} points!`,
+        embeds: [
+          window.location.href,
+          'https://yourgame.com/achievements/' + achievementId
+        ]
+      });
+    };
+
+    const shareGameInvite = () => {
+      composeCast({
+        text: 'Want to challenge me? Try to beat my high score! 🏆',
+        embeds: [window.location.href]
+      });
+    };
+
+    return (
+      <div className="achievement-share">
+        <h2>Congratulations! 🎉</h2>
+        <p>Level {level} completed with {score} points</p>
+        
+        <div className="share-options">
+          <button onClick={shareAchievement}>
+            Share Achievement
+          </button>
+          <button onClick={shareGameInvite}>
+            Challenge Friends
+          </button>
+        </div>
+      </div>
+    );
+  }
+  ```
+
+  ```tsx Dynamic Content Sharing
+  import { useComposeCast } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  export default function CustomShareDialog() {
+    const { composeCast } = useComposeCast();
+    const [shareText, setShareText] = useState('');
+
+    const handleCustomShare = () => {
+      if (!shareText.trim()) return;
+      
+      composeCast({
+        text: shareText,
+        embeds: [window.location.href]
+      });
+      
+      // Clear after sharing
+      setShareText('');
+    };
+
+    return (
+      <div className="share-dialog">
+        <textarea 
+          value={shareText}
+          onChange={(e) => setShareText(e.target.value)}
+          placeholder="What would you like to share?"
+          maxLength={280}
+        />
+        
+        <div className="share-actions">
+          <span>{280 - shareText.length} characters remaining</span>
+          <button 
+            onClick={handleCustomShare}
+            disabled={!shareText.trim()}
+          >
+            Share Cast
+          </button>
+        </div>
+      </div>
+    );
+  }
+  ```
+</RequestExample>
+
+## Strategic Sharing Patterns
+
+### Achievement Moments
+
+Share at moments of user accomplishment:
+
+```tsx examples/AchievementMoments.tsx
+// After quiz completion
+composeCast({
+  text: "I'm a Ravenclaw! 🦅 What house are you?",
+  embeds: [quizUrl]
+});
+
+// After NFT mint
+composeCast({
+  text: "Just minted my first collectible! 🎨",
+  embeds: [mintUrl, nftImageUrl]
+});
+
+// After game milestone
+composeCast({
+  text: "Finally beat level 50! This game is addictive 🎮",
+  embeds: [gameUrl]
+});
+```
+
+### Viral Growth Mechanics
+
+Design shares that encourage interaction:
+
+```tsx examples/ViralGrowthMechanics.tsx
+// Challenge pattern
+composeCast({
+  text: "Beat my time of 2:34 if you can! ⏱️",
+  embeds: [challengeUrl]
+});
+
+// Social proof pattern  
+composeCast({
+  text: "Join 50,000+ players already playing!",
+  embeds: [gameUrl]
+});
+
+// FOMO pattern
+composeCast({
+  text: "Limited edition drop ends in 2 hours! 🔥",
+  embeds: [dropUrl]
+});
+```
+
+### Content Personalization
+
+Customize shares based on user activity:
+
+```tsx examples/ContentPersonalization.tsx
+import { useMiniKit, useComposeCast } from '@coinbase/onchainkit/minikit';
+
+export default function PersonalizedShare() {
+  const { context } = useMiniKit();
+  const { composeCast } = useComposeCast();
+  
+  const sharePersonalized = (achievement) => {
+    const isNewUser = !context.client.added;
+    
+    const text = isNewUser 
+      ? `Just discovered this amazing ${achievement.category} app!`
+      : `Another ${achievement.type} completed! ${achievement.streak} day streak 🔥`;
+      
+    composeCast({
+      text,
+      embeds: [window.location.href]
+    });
+  };
+
+  return (
+    <button onClick={() => sharePersonalized(userAchievement)}>
+      Share Progress
+    </button>
+  );
+}
+```
+
+## Best Practices
+
+### Text Content
+
+* **Keep it concise**: Farcaster has character limits
+* **Include emotional context**: Use emojis and excitement
+* **Add clear value**: Explain why others should care
+* **Include call-to-action**: "Try it yourself", "Beat my score"
+
+### Embed Strategy
+
+* **Always include your app URL** for discoverability
+* **Add relevant media**: Images, videos, other content
+* **Test embed rendering**: Ensure metadata displays correctly
+
+### Timing Optimization
+
+* **Post-achievement**: When users feel accomplished
+* **Social moments**: When friends are likely online
+* **Value demonstration**: After showing app benefits
+* **Avoid interruption**: Don't break user flow
+
+<Warning>
+  The composer opens in a native overlay or new window depending on the client. Users can modify the text before posting, so don't rely on exact text for tracking. Use URL parameters or unique embeds for attribution tracking.
+</Warning>
+
+<Info>
+  `useComposeCast` is one of the most powerful hooks for viral growth. Strategic implementation of sharing at the right moments can significantly increase your Mini App's reach and user acquisition.
+</Info>
+
+
+# useViewCast
+
+> View a cast by its hash from your Mini App
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Info>
+  Opens a specific Farcaster cast within the host application using the cast's unique hash identifier.
+</Info>
+
+## Parameters
+
+<ParamField body="hash" type="string" required>
+  The unique hash identifier of the cast to view. This is the cryptographic hash that uniquely identifies a cast on the Farcaster network.
+</ParamField>
+
+## Returns
+
+<ResponseField name="viewCast" type="() => void">
+  Function that opens the specified cast when called.
+</ResponseField>
+
+<RequestExample>
+  ```tsx components/CastReference.tsx
+  import { useViewCast } from '@coinbase/onchainkit/minikit';
+
+  export default function CastReference({ castHash, castAuthor }) {
+    const viewCast = useViewCast(castHash);
+
+    return (
+      <div className="cast-reference">
+        <p>Referenced cast by {castAuthor}</p>
+        <button onClick={viewCast}>
+          View Original Cast
+        </button>
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/GameAchievement.tsx
+  import { useViewCast, useComposeCast } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  export default function GameAchievement({ achievement }) {
+    const [sharedCastHash, setSharedCastHash] = useState(null);
+    
+    const composeCast = useComposeCast();
+    const viewSharedCast = useViewCast(sharedCastHash);
+
+    const shareAchievement = () => {
+      composeCast({
+        text: `🎮 Just unlocked "${achievement.name}" in this Mini App! Can you beat my score?`,
+        embeds: [window.location.href]
+      });
+      
+      // Store cast hash when user shares (this would come from your backend)
+      // setSharedCastHash(returnedCastHash);
+    };
+
+    return (
+      <div className="achievement-card">
+        <h3>🏆 {achievement.name}</h3>
+        <p>{achievement.description}</p>
+        
+        <div className="actions">
+          <button onClick={shareAchievement}>
+            Share Achievement
+          </button>
+          
+          {sharedCastHash && (
+            <button onClick={viewSharedCast}>
+              View My Share
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/ThreadNavigation.tsx
+  import { useViewCast } from '@coinbase/onchainkit/minikit';
+
+  export default function ThreadNavigation({ parentCastHash, replyCastHashes }) {
+    const viewParentCast = useViewCast(parentCastHash);
+
+    return (
+      <div className="thread-navigation">
+        <div className="parent-cast">
+          <h4>Original Discussion</h4>
+          <button onClick={viewParentCast}>
+            View Parent Cast
+          </button>
+        </div>
+        
+        <div className="replies">
+          <h4>Replies in Thread</h4>
+          {replyCastHashes.map((hash, index) => (
+            <ReplyItem key={hash} castHash={hash} replyNumber={index + 1} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function ReplyItem({ castHash, replyNumber }) {
+    const viewCast = useViewCast(castHash);
+    
+    return (
+      <button onClick={viewCast} className="reply-item">
+        Reply #{replyNumber}
+      </button>
+    );
+  }
+  ```
+
+  ```tsx Community Highlights
+  import { useViewCast } from '@coinbase/onchainkit/minikit';
+
+  export default function CommunityHighlights({ featuredCasts }) {
+    return (
+      <div className="community-highlights">
+        <h2>Community Highlights</h2>
+        <div className="featured-casts">
+          {featuredCasts.map(cast => (
+            <FeaturedCast key={cast.hash} cast={cast} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function FeaturedCast({ cast }) {
+    const viewCast = useViewCast(cast.hash);
+    
+    return (
+      <div className="featured-cast-card">
+        <div className="cast-preview">
+          <h4>{cast.author}</h4>
+          <p>{cast.preview}</p>
+          <span className="engagement">{cast.likes} likes · {cast.recasts} recasts</span>
+        </div>
+        
+        <button onClick={viewCast} className="view-cast-btn">
+          View Full Cast
+        </button>
+      </div>
+    );
+  }
+  ```
+</RequestExample>
+
+## Usage Patterns
+
+### Content Attribution
+
+Reference original casts that inspired your Mini App content:
+
+```tsx components/AttributionFooter.tsx
+const AttributionFooter = ({ originalCastHash, authorName }) => {
+  const viewOriginalCast = useViewCast(originalCastHash);
+  
+  return (
+    <footer className="content-attribution">
+      <span>Inspired by cast from {authorName}</span>
+      <button onClick={viewOriginalCast}>
+        View Original
+      </button>
+    </footer>
+  );
+};
+```
+
+### Discussion Threading
+
+Navigate cast conversations and replies:
+
+```tsx components/DiscussionThread.tsx
+const DiscussionThread = ({ threadCasts }) => {
+  return (
+    <div className="discussion-thread">
+      {threadCasts.map((cast, index) => (
+        <ThreadItem 
+          key={cast.hash}
+          cast={cast}
+          isRoot={index === 0}
+        />
+      ))}
+    </div>
+  );
+};
+
+const ThreadItem = ({ cast, isRoot }) => {
+  const viewCast = useViewCast(cast.hash);
+  
+  return (
+    <div className={`thread-item ${isRoot ? 'root' : 'reply'}`}>
+      <span>{cast.author}: {cast.preview}</span>
+      <button onClick={viewCast}>View</button>
+    </div>
+  );
+};
+```
+
+### Social Proof
+
+Showcase community engagement with your Mini App:
+
+```tsx components/SocialProof.tsx
+const SocialProof = ({ testimonialCasts }) => {
+  return (
+    <section className="social-proof">
+      <h3>What Users Are Saying</h3>
+      {testimonialCasts.map(cast => (
+        <TestimonialCard key={cast.hash} cast={cast} />
+      ))}
+    </section>
+  );
+};
+
+const TestimonialCard = ({ cast }) => {
+  const viewCast = useViewCast(cast.hash);
+  
+  return (
+    <div className="testimonial" onClick={viewCast}>
+      <blockquote>"{cast.text}"</blockquote>
+      <cite>— {cast.author}</cite>
+    </div>
+  );
+};
+```
+
+## Best Practices
+
+### Hash Validation
+
+Always validate cast hashes before using them:
+
+```tsx components/SafeCastViewer.tsx
+const validateCastHash = (hash) => {
+  // Cast hashes are typically 40-character hexadecimal strings
+  return /^0x[a-fA-F0-9]{40}$/.test(hash);
+};
+
+const SafeCastViewer = ({ castHash }) => {
+  const viewCast = useViewCast(castHash);
+  
+  const handleViewCast = () => {
+    if (validateCastHash(castHash)) {
+      viewCast();
+    } else {
+      console.error('Invalid cast hash:', castHash);
+    }
+  };
+  
+  return (
+    <button onClick={handleViewCast}>
+      View Cast
+    </button>
+  );
+};
+```
+
+### Performance Optimization
+
+Cache cast metadata to avoid repeated lookups:
+
+```tsx components/CastLibrary.tsx
+import { useMemo } from 'react';
+
+const CastLibrary = ({ castHashes }) => {
+  const sortedCasts = useMemo(() => {
+    return castHashes.sort((a, b) => {
+      // Sort by timestamp or other criteria
+      return a.timestamp - b.timestamp;
+    });
+  }, [castHashes]);
+  
+  return (
+    <div className="cast-library">
+      {sortedCasts.map(cast => (
+        <CastItem key={cast.hash} castHash={cast.hash} />
+      ))}
+    </div>
+  );
+};
+```
+
+### User Experience
+
+Provide context about the cast before opening:
+
+```tsx components/ContextualCastLink.tsx
+const ContextualCastLink = ({ castHash, context }) => {
+  const viewCast = useViewCast(castHash);
+  
+  return (
+    <div className="contextual-cast-link">
+      <p className="context">{context}</p>
+      <button onClick={viewCast} className="cast-link">
+        View Related Cast →
+      </button>
+    </div>
+  );
+};
+```
+
+<Warning>
+  Cast hashes must be valid Farcaster cast identifiers. Invalid hashes may cause errors or unexpected behavior in the host application.
+</Warning>
+
+<Info>
+  Viewing casts provides a seamless way to reference Farcaster content from your Mini App. Use this for community highlights, content attribution, and threading discussions related to your app.
+</Info>
+
+
+# useAuthenticate
+
+> Cryptographically authenticate users with Sign In with Farcaster
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Info>
+  Provides cryptographically secure user authentication using Sign In with Farcaster (SIWF). Returns verified user identity and signature for secure operations.
+</Info>
+
+## Returns
+
+<ResponseField name="user" type="AuthenticatedUser | null">
+  Authenticated user object with verified identity, or null if not authenticated.
+
+  <Expandable title="AuthenticatedUser properties">
+    <ResponseField name="fid" type="string">
+      Verified Farcaster ID of the authenticated user.
+    </ResponseField>
+
+    <ResponseField name="signature" type="string">
+      Cryptographic signature proving user identity.
+    </ResponseField>
+
+    <ResponseField name="message" type="string">
+      The signed message used for authentication.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="authenticate" type="() => Promise<AuthenticatedUser | null>">
+  Function to trigger the authentication flow. Returns verified user data on success.
+</ResponseField>
+
+<RequestExample>
+  ```tsx components/AuthButton.tsx
+  import { useAuthenticate } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  export default function AuthButton() {
+    const { user, authenticate } = useAuthenticate();
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+    const handleAuth = async () => {
+      setIsAuthenticating(true);
+      try {
+        const authenticatedUser = await authenticate();
+        if (authenticatedUser) {
+          console.log('Authenticated user:', authenticatedUser.fid);
+          // Save to your backend
+          await saveUserSession(authenticatedUser);
+        }
+      } catch (error) {
+        console.error('Authentication failed:', error);
+      } finally {
+        setIsAuthenticating(false);
+      }
+    };
+
+    if (user) {
+      return (
+        <div>
+          <p>✅ Authenticated as FID: {user.fid}</p>
+          <button onClick={() => window.location.reload()}>
+            Sign Out
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <button 
+        onClick={handleAuth}
+        disabled={isAuthenticating}
+      >
+        {isAuthenticating ? 'Authenticating...' : 'Sign In with Farcaster'}
+      </button>
+    );
+  }
+  ```
+
+  ```tsx components/ProtectedFeature.tsx  
+  import { useAuthenticate } from '@coinbase/onchainkit/minikit';
+
+  export default function ProtectedFeature() {
+    const { user, authenticate } = useAuthenticate();
+
+    if (!user) {
+      return (
+        <div className="auth-required">
+          <h3>Authentication Required</h3>
+          <p>Please sign in to access this feature</p>
+          <button onClick={authenticate}>
+            Sign In with Farcaster
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="protected-content">
+        <h3>Welcome, {user.fid}!</h3>
+        <p>This is a protected feature only available to authenticated users.</p>
+      </div>
+    );
+  }
+  ```
+</RequestExample>
+
+### Context vs Authentication
+
+Use the right tool for the job:
+
+```tsx components/SecurityExample.tsx
+import { useAuthenticate, useMiniKit } from '@coinbase/onchainkit/minikit';
+
+export default function SecurityExample() {
+  const { user } = useAuthenticate(); // For security
+  const { context } = useMiniKit();   // For UX 
+
+  return (
+    <div>
+      {/* Safe: UX personalization with context */}
+      {context.user.fid && (
+        <p>Hi there, user {context.user.fid}!</p>
+      )}
+      
+      {/* Safe: Security with authentication */}
+      {user && (
+        <SecureUserDashboard verifiedFid={user.fid} />
+      )}
+    </div>
+  );
+}
+```
+
+<Info>
+  `useAuthenticate` provides cryptographic proof of user identity. Always verify signatures server-side for security-critical operations. Use `useMiniKit` context only for UX hints and analytics.
+</Info>
+
+
+# useAddFrame (coming soon)
+
+> Allow users to save your Mini App to their collection (Coming Soon)
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Warning>
+  The Add Frame feature is not yet available in Base App but is coming soon. This documentation describes the upcoming API that will be available when the feature is fully deployed.
+</Warning>
+
+<Info>
+  Enables users to save your Mini App to their personal collection for quick access. Returns notification credentials when successful, enabling future push notifications to re-engage the user.
+</Info>
+
+## Returns
+
+<ResponseField name="addFrame" type="() => Promise<AddFrameResult | null>">
+  Function that triggers the add frame flow. Returns a promise that resolves when the user completes the action.
+
+  <Expandable title="AddFrameResult properties">
+    <ResponseField name="url" type="string">
+      The URL that was saved to the user's collection. This should match your Mini App's manifest URL.
+    </ResponseField>
+
+    <ResponseField name="token" type="string">
+      Notification token for this user and Mini App combination. Save this to your database to send push notifications later.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+  ```tsx components/SaveButton.tsx
+  import { useAddFrame } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  export default function SaveButton() {
+    const addFrame = useAddFrame();
+    const [isAdding, setIsAdding] = useState(false);
+
+    const handleAddFrame = async () => {
+      setIsAdding(true);
+      try {
+        const result = await addFrame();
+        if (result) {
+          console.log('Frame saved:', result.url);
+          console.log('Notification token:', result.token);
+          
+          // Save to your database for future notifications
+          await saveNotificationToken(result.token, result.url);
+          
+          alert('Mini App saved successfully! 🎉');
+        } else {
+          console.log('User cancelled or frame already saved');
+        }
+      } catch (error) {
+        console.error('Failed to save frame:', error);
+      } finally {
+        setIsAdding(false);
+      }
+    };
+
+    return (
+      <button 
+        onClick={handleAddFrame}
+        disabled={isAdding}
+      >
+        {isAdding ? 'Saving...' : 'Save Mini App'}
+      </button>
+    );
+  }
+
+  async function saveNotificationToken(token: string, url: string) {
+    await fetch('/api/notification-tokens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, url })
+    });
+  }
+  ```
+
+  ```tsx components/SmartSaveButton.tsx
+  import { useAddFrame, useMiniKit } from '@coinbase/onchainkit/minikit';
+
+  export default function SmartSaveButton() {
+    const addFrame = useAddFrame();
+    const { context } = useMiniKit();
+    
+    // Don't show save button if already saved
+    if (context.client.added) {
+      return <div>✅ Already saved to your collection</div>;
+    }
+
+    const handleSave = async () => {
+      const result = await addFrame();
+      if (result) {
+        // Save with user context for analytics
+        await fetch('/api/analytics', {
+          method: 'POST',
+          body: JSON.stringify({
+            event: 'frame_saved',
+            userFid: context.user.fid,
+            url: result.url,
+            token: result.token
+          })
+        });
+      }
+    };
+
+    return (
+      <button onClick={handleSave}>
+        Save to Collection
+      </button>
+    );
+  }
+  ```
+
+  ```tsx components/GameCompletion.tsx
+  import { useAddFrame } from '@coinbase/onchainkit/minikit';
+  import { useEffect, useState } from 'react';
+
+  export default function GameCompletion() {
+    const addFrame = useAddFrame();
+    const [showSavePrompt, setShowSavePrompt] = useState(false);
+    
+    // Show save prompt after user achieves something
+    const handleGameWin = () => {
+      setShowSavePrompt(true);
+    };
+
+    const handleSave = async () => {
+      const result = await addFrame();
+      if (result) {
+        // User saved after achievement - high engagement signal
+        analytics.track('post_achievement_save', {
+          achievement: 'game_completed',
+          token: result.token
+        });
+      }
+      setShowSavePrompt(false);
+    };
+
+    return (
+      <div>
+        {showSavePrompt && (
+          <div className="save-prompt">
+            <h3>🎉 Congratulations!</h3>
+            <p>Save this game to play again anytime</p>
+            <button onClick={handleSave}>Save Game</button>
+            <button onClick={() => setShowSavePrompt(false)}>
+              Maybe Later
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+  ```
+</RequestExample>
+
+## Usage Patterns
+
+### Database Storage
+
+Always save the notification token to your database for future use:
+
+```typescript pages/api/notification-tokens.ts
+// Example API route for storing tokens
+// pages/api/notification-tokens.ts
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    const { token, url, userFid } = req.body;
+    
+    await db.notificationTokens.create({
+      data: {
+        token,
+        url,
+        userFid,
+        createdAt: new Date()
+      }
+    });
+    
+    res.status(200).json({ success: true });
+  }
+}
+```
+
+### Strategic Timing
+
+Prompt users to save at high-value moments:
+
+* ✅ **After achievements**: Completing a game, reaching a milestone
+* ✅ **After successful transactions**: Minting an NFT, making a purchase
+* ✅ **During onboarding**: After showing app value
+* ❌ **Immediately on load**: Before demonstrating value
+* ❌ **Multiple times**: Respect user's previous decision
+
+### Error Handling
+
+Handle various outcomes gracefully:
+
+```tsx
+const handleAddFrame = async () => {
+  try {
+    const result = await addFrame();
+    
+    if (result === null) {
+      // User cancelled or already saved
+      console.log('No action taken');
+    } else {
+      // Successfully saved
+      console.log('Saved with token:', result.token);
+    }
+  } catch (error) {
+    // Network error or other issue
+    console.error('Save failed:', error);
+    showErrorMessage('Failed to save. Please try again.');
+  }
+};
+```
+
+<Warning>
+  The notification token is unique per user and Mini App combination. Store it securely in your database and never expose it in client-side code. Tokens are required for sending push notifications when that feature becomes available.
+</Warning>
+
+<Info>
+  Users can only save each Mini App once. Subsequent calls to `addFrame()` for the same user and app will return `null`. Use `context.client.added` from `useMiniKit` to check if the user has already saved your app.
+</Info>
+
+
+
+# useNotification (coming soon)
+
+> Send notifications via a backend proxy to users who saved your Mini App (Coming Soon)
+
+Defined in [@coinbase/onchainkit](https://github.com/coinbase/onchainkit)
+
+<Warning>
+  Notifications are not yet available in Base App but are coming soon. This documentation describes the upcoming API that will be available when notifications are fully deployed.
+</Warning>
+
+ebcbglkhecg
+
+<Info>
+  Allows Mini Apps to send push notifications to users who have saved your app. Notifications require a backend proxy route to handle the actual delivery and enforce rate limiting.
+</Info>
+
+## Parameters
+
+<ParamField body="options" type="NotificationOptions" required>
+  Configuration object for the notification to send.
+
+  <Expandable title="NotificationOptions properties">
+    <ParamField body="title" type="string" required>
+      The notification title (maximum 100 characters).
+    </ParamField>
+
+    <ParamField body="body" type="string" required>
+      The notification message body (maximum 500 characters).
+    </ParamField>
+
+    <ParamField body="targetFid" type="string" optional>
+      Specific user FID to send notification to. If not provided, sends to all users who saved your Mini App.
+    </ParamField>
+
+    <ParamField body="actionUrl" type="string" optional>
+      URL to open when notification is tapped. Defaults to your Mini App URL.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Required Backend Setup
+
+Notifications require a backend proxy route to handle delivery and rate limiting:
+
+<RequestExample>
+  ```typescript app/api/minikit/notifications/route.ts
+  // /api/minikit/notifications
+  import { NextRequest, NextResponse } from 'next/server';
+
+  const FARCASTER_API_URL = 'https://api.farcaster.xyz';
+  const MAX_NOTIFICATIONS_PER_HOUR = 10;
+
+  interface NotificationRequest {
+    title: string;
+    body: string;
+    targetFid?: string;
+    actionUrl?: string;
+  }
+
+  export async function POST(request: NextRequest) {
+    try {
+      const { title, body, targetFid, actionUrl }: NotificationRequest = await request.json();
+      
+      // Validate request
+      if (!title || !body) {
+        return NextResponse.json(
+          { error: 'Title and body are required' },
+          { status: 400 }
+        );
+      }
+      
+      if (title.length > 100 || body.length > 500) {
+        return NextResponse.json(
+          { error: 'Title or body too long' },
+          { status: 400 }
+        );
+      }
+      
+      // Check rate limits (implement your own rate limiting logic)
+      const isRateLimited = await checkRateLimit(request);
+      if (isRateLimited) {
+        return NextResponse.json(
+          { error: 'Rate limit exceeded' },
+          { status: 429 }
+        );
+      }
+      
+      // Forward to Farcaster notification API
+      const response = await fetch(`${FARCASTER_API_URL}/notifications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.FARCASTER_API_KEY}`,
+        },
+        body: JSON.stringify({
+          title,
+          body,
+          targetFid,
+          actionUrl: actionUrl || process.env.MINI_APP_URL,
+          appId: process.env.MINI_APP_ID,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Notification API error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      return NextResponse.json(result);
+      
+    } catch (error) {
+      console.error('Notification error:', error);
+      return NextResponse.json(
+        { error: 'Failed to send notification' },
+        { status: 500 }
+      );
+    }
+  }
+
+  async function checkRateLimit(request: NextRequest): Promise<boolean> {
+    // Implement your rate limiting logic here
+    // Consider using Redis or a database to track notification counts
+    // Return true if rate limit is exceeded
+    return false;
+  }
+  ```
+
+  ```python server.py
+  from fastapi import FastAPI, HTTPException, BackgroundTasks
+  from pydantic import BaseModel
+  import httpx
+  import os
+  from typing import Optional
+
+  app = FastAPI()
+
+  class NotificationRequest(BaseModel):
+      title: str
+      body: str
+      targetFid: Optional[str] = None
+      actionUrl: Optional[str] = None
+
+  FARCASTER_API_URL = "https://api.farcaster.xyz"
+  MAX_NOTIFICATIONS_PER_HOUR = 10
+
+  @app.post("/api/minikit/notifications")
+  async def send_notification(
+      notification: NotificationRequest,
+      background_tasks: BackgroundTasks
+  ):
+      # Validate input
+      if len(notification.title) > 100:
+          raise HTTPException(status_code=400, detail="Title too long")
+      
+      if len(notification.body) > 500:
+          raise HTTPException(status_code=400, detail="Body too long")
+      
+      # Check rate limits
+      if await is_rate_limited():
+          raise HTTPException(status_code=429, detail="Rate limit exceeded")
+      
+      # Prepare payload
+      payload = {
+          "title": notification.title,
+          "body": notification.body,
+          "targetFid": notification.targetFid,
+          "actionUrl": notification.actionUrl or os.getenv("MINI_APP_URL"),
+          "appId": os.getenv("MINI_APP_ID"),
+      }
+      
+      # Send to Farcaster API
+      async with httpx.AsyncClient() as client:
+          response = await client.post(
+              f"{FARCASTER_API_URL}/notifications",
+              json=payload,
+              headers={
+                  "Authorization": f"Bearer {os.getenv('FARCASTER_API_KEY')}",
+                  "Content-Type": "application/json",
+              }
+          )
+          
+          if response.status_code != 200:
+              raise HTTPException(
+                  status_code=500, 
+                  detail="Failed to send notification"
+              )
+          
+          return response.json()
+
+  async def is_rate_limited() -> bool:
+      # Implement rate limiting logic
+      return False
+  ```
+</RequestExample>
+
+## Frontend Usage
+
+<RequestExample>
+  ```tsx components/GameCompletion.tsx
+  import { useNotification } from '@coinbase/onchainkit/minikit';
+  import { useState } from 'react';
+
+  export default function GameCompletion({ playerStats }) {
+    const [isNotifying, setIsNotifying] = useState(false);
+    const sendNotification = useNotification();
+
+    const notifyAchievement = async () => {
+      setIsNotifying(true);
+      
+      try {
+        await sendNotification({
+          title: "🎮 New Achievement Unlocked!",
+          body: `You just beat ${playerStats.level} with a score of ${playerStats.score}! Can your friends do better?`,
+          actionUrl: `${window.location.origin}/challenge/${playerStats.gameId}`
+        });
+        
+        console.log('Achievement notification sent!');
+      } catch (error) {
+        console.error('Failed to send notification:', error);
+      } finally {
+        setIsNotifying(false);
+      }
+    };
+
+    return (
+      <div className="game-completion">
+        <h2>🏆 Level Complete!</h2>
+        <p>Score: {playerStats.score}</p>
+        
+        <button 
+          onClick={notifyAchievement}
+          disabled={isNotifying}
+          className="notify-btn"
+        >
+          {isNotifying ? 'Sending...' : 'Share Achievement'}
+        </button>
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/TournamentScheduler.tsx
+  import { useNotification } from '@coinbase/onchainkit/minikit';
+  import { useEffect, useState } from 'react';
+
+  export default function TournamentScheduler({ tournament }) {
+    const sendNotification = useNotification();
+    const [reminderSet, setReminderSet] = useState(false);
+
+    const scheduleReminder = async () => {
+      try {
+        await sendNotification({
+          title: "🏆 Tournament Starting Soon!",
+          body: `${tournament.name} begins in 15 minutes. Join now to compete for prizes!`,
+          actionUrl: `${window.location.origin}/tournament/${tournament.id}`
+        });
+        
+        setReminderSet(true);
+      } catch (error) {
+        console.error('Failed to schedule reminder:', error);
+      }
+    };
+
+    return (
+      <div className="tournament-card">
+        <h3>{tournament.name}</h3>
+        <p>Starts: {tournament.startTime}</p>
+        <p>Prize Pool: {tournament.prizePool}</p>
+        
+        <button 
+          onClick={scheduleReminder}
+          disabled={reminderSet}
+          className="reminder-btn"
+        >
+          {reminderSet ? '✅ Reminder Set' : '🔔 Remind Me'}
+        </button>
+      </div>
+    );
+  }
+  ```
+
+  ```tsx components/SocialUpdates.tsx
+  import { useNotification, useMiniKit } from '@coinbase/onchainkit/minikit';
+
+  export default function SocialUpdates({ userFid }) {
+    const { context } = useMiniKit();
+    const sendNotification = useNotification();
+
+    const notifyFriends = async (updateType, details) => {
+      try {
+        await sendNotification({
+          title: getNotificationTitle(updateType),
+          body: getNotificationBody(updateType, details),
+          // Don't specify targetFid to notify all saved users
+        });
+      } catch (error) {
+        console.error('Failed to send social update:', error);
+      }
+    };
+
+    const getNotificationTitle = (type) => {
+      switch (type) {
+        case 'high_score':
+          return '🎯 New High Score!';
+        case 'level_up':
+          return '⬆️ Level Up!';
+        case 'challenge':
+          return '⚡ New Challenge!';
+        default:
+          return '📢 Mini App Update';
+      }
+    };
+
+    const getNotificationBody = (type, details) => {
+      switch (type) {
+        case 'high_score':
+          return `Someone just scored ${details.score} points! Can you beat it?`;
+        case 'level_up':
+          return `A player reached level ${details.level}! Join the competition.`;
+        case 'challenge':
+          return `New daily challenge available with ${details.reward} rewards!`;
+        default:
+          return 'Check out the latest updates in the Mini App!';
+      }
+    };
+
+    return (
+      <div className="social-updates">
+        <button onClick={() => notifyFriends('high_score', { score: 9999 })}>
+          Share High Score
+        </button>
+        <button onClick={() => notifyFriends('challenge', { reward: '100 coins' })}>
+          Announce Challenge
+        </button>
+      </div>
+    );
+  }
+  ```
+</RequestExample>
+
+## Rate Limiting Guidelines
+
+### Recommended Limits
+
+* **Per user**: Maximum 10 notifications per hour
+* **Per app**: Maximum 1000 notifications per hour
+* **Burst protection**: Maximum 3 notifications per minute
+
+### Implementation Strategy
+
+```typescript lib/rate-limit.ts
+// Redis-based rate limiting example
+import Redis from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+
+async function checkRateLimit(appId: string, userFid?: string): Promise<boolean> {
+  const now = Date.now();
+  const hourKey = `notifications:${appId}:${Math.floor(now / 3600000)}`;
+  
+  // Check app-wide limits
+  const appCount = await redis.incr(hourKey);
+  await redis.expire(hourKey, 3600);
+  
+  if (appCount > 1000) {
+    return true; // Rate limited
+  }
+  
+  // Check per-user limits if targeting specific user
+  if (userFid) {
+    const userKey = `notifications:${appId}:user:${userFid}:${Math.floor(now / 3600000)}`;
+    const userCount = await redis.incr(userKey);
+    await redis.expire(userKey, 3600);
+    
+    if (userCount > 10) {
+      return true; // Rate limited
+    }
+  }
+  
+  return false; // Not rate limited
+}
+```
+
+## Best Practices
+
+### Content Guidelines
+
+* **Be relevant**: Only send notifications related to user activity or time-sensitive events
+* **Personalize**: Use user-specific information when available
+* **Clear value**: Ensure each notification provides clear value to the recipient
+* **Timing**: Send notifications at appropriate times (avoid late night/early morning)
+
+### Technical Considerations
+
+* **Error handling**: Always handle notification failures gracefully
+* **Retry logic**: Implement exponential backoff for failed deliveries
+* **Analytics**: Track notification delivery rates and user engagement
+* **Privacy**: Respect user notification preferences and provide opt-out mechanisms
+
+### User Experience
+
+* **Frequency control**: Allow users to control notification frequency
+* **Category filters**: Let users choose types of notifications they want
+* **Action relevance**: Ensure notification action URLs are contextually relevant
+
+<Warning>
+  Excessive or irrelevant notifications may lead to users removing your Mini App. Always prioritize user experience over engagement metrics.
+</Warning>
+
+<Info>
+  When implemented thoughtfully, notifications can significantly increase user engagement and retention for your Mini App. Focus on providing genuine value with each notification sent.
+</Info>
