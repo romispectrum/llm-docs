@@ -1,0 +1,12 @@
+# Polkadot
+⚠️⚠️⚠️ Polkadot provides the llm compatible docs!!! ⚠️⚠️⚠️
+
+Use this link if you are low on credits: `https://docs.polkadot.com/llms.txt`
+
+Otherwise use this: `https://docs.polkadot.com/llms-full.txt`
+
+
+## Usage with Cursor ai
+1. Go to the Cursor chat and click on `@/Docs/+ Add new doc`
+2. Paste this URL: `https://docs.polkadot.com/llms-full.txt`
+3. Name it `polkadot-docs`
