@@ -1,0 +1,2173 @@
+---
+title: "Enclave Protocol Documentation"
+description: "Optimized documentation for Enclave Protocol and CRISP example - tailored for LLM consumption"
+---
+
+# Enclave Protocol Documentation
+
+This document contains the essential documentation for the Enclave Protocol, optimized for LLM consumption and development tools like Cursor.
+
+## Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Building with Enclave](#building-with-enclave)
+- [Computation Flow](#computation-flow)
+- [Compute Provider](#compute-provider)
+- [Getting Started](#getting-started)
+- [Hello World Tutorial](#hello-world-tutorial)
+- [Installation](#installation)
+- [Introduction](#introduction)
+- [What is E3](#what-is-e3)
+- [Write E3 Contract](#write-e3-contract)
+- [Write Secure Program](#write-secure-program)
+- [CRISP Example](#crisp-example)
+- [White Paper](#white-paper)
+
+---
+
+## Architecture Overview
+
+This section provides a breakdown of Enclave's architecture, focusing on the essential components and workflows to help you implement it effectively.
+
+### Core Components
+
+#### 1. Key Actors
+
+**Requesters**
+
+- Initiate and define computation requests, including parameters and requirements
+- Retrieve and utilize final computation results
+- Can be applications or other entities
+
+**Data Providers**
+
+- Supply private input data required for computation
+- Are responsible for encrypting data before submission
+- Can be end users, systems, or other applications
+
+**Ciphernodes**
+
+- Provide cryptographic services as staked network nodes
+- Handle distributed key generation and decryption operations
+- Form Ciphernode Committees (CiCos) for specific computations
+
+#### 2. Smart Contracts
+
+**Enclave Contract**
+
+- Central coordinator of the E3 ecosystem
+- Manages computation requests and lifecycle
+- Coordinates Ciphernode selection and CiCo formation
+- Maintains input integrity via Merkle trees
+- Emits events for off-chain services
+
+**E3 Program (E3P) Contract**
+
+- Defines computation logic
+- Validates program parameters
+- Verifies computation proofs
+- Interfaces with the Enclave contract
+- Ensures correct execution of the E3P
+
+**InputValidator Contract**
+
+- Validates and sanitizes input data
+- Verifies Zero-Knowledge Proofs (ZKPs)
+- Prevents malicious input injection
+
+**Decryption Verifier Contract**
+
+- Validates Ciphernode decryption shares
+- Ensures correct result decryption
+- Verifies threshold signature schemes
+
+#### 3. Compute Infrastructure
+
+**Compute Provider (CP)**
+
+- Runs the E3 Program over the published inputs
+- Reports computation results of the E3P to the Enclave contract
+
+Enclave supports multiple CPs with a variety of different trust, scalability, and cost properties.
+
+**Supported systems:**
+
+1. **Verifiable Systems**
+
+   - [RISC Zero zkVM](https://www.risczero.com/)
+   - [Succint SP1](https://docs.succinct.xyz/) (coming soon)
+   - [Jolt](https://jolt.a16zcrypto.com/) (coming soon)
+
+2. **Oracle-Based Systems**
+   - zkTLS VMs (coming soon)
+   - Committee-based oracles (coming soon)
+   - Game theory-based oracles (coming soon)
+
+### Interaction Flow
+
+The following steps outline how these components interact in a typical computation:
+
+1. **Computation Request**: A Requester submits a computation request with specific parameters.
+2. **Node Selection**: Ciphernodes are selected via sortition to form a Ciphernode Committee (CiCo).
+3. **Key Generation**: The CiCo generates and publishes a shared public key for encryption.
+4. **Data Submission**: Data Providers encrypt their inputs using the CiCo's shared public key and publish commitments to the encrypted inputs onchain.
+5. **Computation Execution**: The Compute Provider (CP) runs the E3 Program (E3P) over the published inputs.
+6. **Decryption**: The CiCo collectively decrypts the final result.
+7. **Result Retrieval**: The Requester retrieves and consumes the decrypted output of the E3P.
+
+### Developer's Perspective
+
+As a developer, you'll interact with:
+
+- **Enclave's Smart Contracts**: To submit requests and retrieve results.
+- **Compute Providers**: To run your E3P using verifiable or oracle-based systems.
+- **E3 Smart Contracts**: To verify the inputs and computation result.
+
+---
+
+## Building with Enclave
+
+The Enclave smart contract acts as the central coordinator for all E3 operations. It manages computation requests, input validation, Ciphernode Committees (CiCos), and result publication while maintaining the security and privacy guarantees of the protocol.
+
+### The Enclave Smart Contract
+
+#### Core Responsibilities
+
+- Manage E3 computation requests
+- Coordinate Ciphernode Committees
+- Handle encrypted input submission
+- Manage Merkle trees for input verification
+- Publish computation results
+- Emit events for off-chain services
+
+#### Key State Variables
+
+```solidity
+contract Enclave {
+    // address of the Ciphernode registry.
+    CiphernodeRegistry public ciphernodeRegistry;
+
+    // Mapping of allowed E3 Programs.
+    mapping(IE3Program e3Program => bool allowed) public e3Programs;
+
+    // Mapping of E3s.
+    mapping(uint256 e3Id => E3 e3) public e3s;
+
+    // Mapping of input merkle trees.
+    mapping(uint256 e3Id => LeanIMTData imt) public inputs;
+
+    // Mapping of enabled encryption schemes.
+    mapping(bytes32 encryptionSchemeId => IDecryptionVerifier decryptionVerifier)
+        public decryptionVerifiers;
+}
+```
+
+### Requesting Computation
+
+#### Request Flow
+
+1. Users submits onchain request
+
+```solidity
+function request(
+    address filter,
+    uint32[2] calldata threshold,
+    uint256[2] calldata startWindow,
+    uint256 duration,
+    IE3Program e3Program,
+    bytes memory e3ProgramParams,
+    bytes memory computeProviderParams
+) external payable
+```
+
+2. Contract validates request parameters
+3. E3 Program contract is set and used to get the InputValidator contract & Encryption scheme.
+4. Request is submitted to the ciphernodeRegistry for committee selection.
+5. `E3Requested` event is emitted
+
+### Committee and Ciphernode Management
+
+#### Committee Selection
+
+- An E3 request triggers a deterministic sortition process to select a Ciphernode Committee (CiCo) from the global pool of available Ciphernodes.
+- Selected nodes coordinate to produce a shared public key with the requested threshold.
+- The public key is published to the Ciphernode Registry smart contract.
+
+### E3 Activation
+
+After the public key is published, anyone can activate the E3 by calling the `activate()` function in the Enclave contract:
+
+```solidity
+function activate(
+    uint256 e3Id,
+    bytes memory publicKey
+) external
+```
+
+Activating an E3 will allow valid Data Providers to submit inputs to the computation.
+
+### Input Publication
+
+Inputs are published directly to the Enclave contract's `publishInput()` function.
+
+---
+
+## Computation Flow
+
+The computation flow in Enclave follows a structured process that ensures privacy, security, and verifiability. Here's how the complete flow works:
+
+### 1. Request Phase
+
+- **Requester** submits a computation request to the Enclave contract
+- Request includes: computation parameters, threshold requirements, time windows, and E3 Program details
+- Contract validates the request and emits `E3Requested` event
+
+### 2. Committee Formation
+
+- **Ciphernode Registry** performs sortition to select committee members
+- Selected **Ciphernodes** form a Committee (CiCo) and generate shared cryptographic keys
+- Public key is published to the registry
+
+### 3. Activation Phase
+
+- Anyone can activate the E3 by calling `activate()` with the published public key
+- This enables data providers to submit encrypted inputs
+
+### 4. Input Submission
+
+- **Data Providers** encrypt their private data using the committee's public key
+- Encrypted inputs are submitted via `publishInput()` function
+- Inputs are stored in a Merkle tree for integrity verification
+
+### 5. Computation Execution
+
+- **Compute Provider** retrieves encrypted inputs and runs the E3 Program
+- Computation is performed over the encrypted data
+- Results are encrypted and submitted back to the contract
+
+### 6. Decryption and Verification
+
+- **Ciphernode Committee** collectively decrypts the computation results
+- Decryption shares are verified by the Decryption Verifier contract
+- Final results are published and made available to requesters
+
+### 7. Result Retrieval
+
+- **Requesters** can retrieve the final computation results
+- Results are verified against the original computation parameters
+
+---
+
+## Compute Provider
+
+The Compute Provider (CP) is a crucial component in the Enclave ecosystem that executes computations over encrypted data. It bridges the gap between the on-chain coordination and off-chain computation.
+
+### Role and Responsibilities
+
+The Compute Provider:
+
+- Retrieves encrypted inputs from the Enclave contract
+- Executes the E3 Program over the encrypted data
+- Generates computation proofs (for verifiable systems)
+- Submits encrypted results back to the contract
+- Handles the computational workload while maintaining privacy
+
+### Supported Systems
+
+#### Verifiable Systems
+
+These systems provide cryptographic proofs of correct computation:
+
+1. **RISC Zero zkVM**
+
+   - Zero-knowledge virtual machine
+   - Provides cryptographic proofs of computation
+   - High security guarantees
+
+2. **Succint SP1** (coming soon)
+
+   - Fast zero-knowledge proof system
+   - Optimized for general-purpose computation
+
+3. **Jolt** (coming soon)
+   - Just-in-time compilation for zero-knowledge proofs
+   - High performance zkVM
+
+#### Oracle-Based Systems
+
+These systems rely on economic incentives and game theory:
+
+1. **zkTLS VMs** (coming soon)
+
+   - Trusted execution environments with zero-knowledge proofs
+   - Bridge between traditional and cryptographic computation
+
+2. **Committee-based oracles** (coming soon)
+
+   - Multiple parties verify computation results
+   - Economic incentives ensure correctness
+
+3. **Game theory-based oracles** (coming soon)
+   - Economic mechanisms to ensure honest computation
+   - Decentralized verification through incentives
+
+### Integration
+
+To integrate with Enclave as a Compute Provider:
+
+1. **Register** your CP with the Enclave contract
+2. **Monitor** for new computation requests
+3. **Retrieve** encrypted inputs when available
+4. **Execute** the E3 Program over the data
+5. **Submit** encrypted results back to the contract
+
+---
+
+## Getting Started
+
+Welcome to Enclave! This guide will help you get started with building privacy-preserving applications using the Enclave Protocol.
+
+### Prerequisites
+
+Before you begin, ensure you have:
+
+- Basic understanding of blockchain and smart contracts
+- Familiarity with Solidity for smart contract development
+- Knowledge of zero-knowledge proofs (helpful but not required)
+- Development environment set up (Node.js, Rust, etc.)
+
+### Quick Start
+
+1. **Install Dependencies**
+
+   ```bash
+   # Install Node.js and pnpm
+   npm install -g pnpm
+
+   # Install Rust
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+   # Install Foundry
+   curl -L https://foundry.paradigm.xyz | bash
+   foundryup
+   ```
+
+2. **Clone the Repository**
+
+   ```bash
+   git clone https://github.com/gnosisguild/enclave.git
+   cd enclave
+   ```
+
+3. **Build the Project**
+
+   ```bash
+   # Build Rust components
+   cargo build
+
+   # Build smart contracts
+   forge build
+   ```
+
+4. **Run Tests**
+
+   ```bash
+   # Run Rust tests
+   cargo test
+
+   # Run smart contract tests
+   forge test
+   ```
+
+### Next Steps
+
+- Explore the [Hello World Tutorial](#hello-world-tutorial) for a hands-on introduction
+- Read the [Architecture Overview](#architecture-overview) to understand the system
+- Check out the [CRISP Example](#crisp-example) for a complete implementation
+
+---
+
+## Hello World Tutorial
+
+This tutorial will walk you through creating your first E3 Program using Enclave. We'll build a simple voting application that demonstrates the core concepts.
+
+### Overview
+
+We'll create:
+
+1. A smart contract that defines the voting logic
+2. A Rust program that processes the votes
+3. A client application that interacts with the system
+
+### Step 1: Smart Contract
+
+First, let's create the voting contract:
+
+```solidity
+// SPDX-License-Identifier: LGPL-3.0-only
+pragma solidity ^0.8.19;
+
+import "@enclave/contracts/Enclave.sol";
+import "@enclave/contracts/E3Program.sol";
+
+contract VotingProgram is E3Program {
+    struct Vote {
+        uint256 option;
+        bytes32 commitment;
+    }
+
+    mapping(uint256 => uint256) public voteCounts;
+    uint256 public totalVotes;
+
+    function processVotes(bytes[] memory encryptedVotes) external override returns (bytes memory) {
+        // This will be implemented by the Compute Provider
+        // The actual vote counting happens off-chain
+        return abi.encode(totalVotes, voteCounts);
+    }
+
+    function validateInput(bytes memory input) external pure override returns (bool) {
+        // Validate that input is a valid vote
+        return input.length == 32; // Simplified validation
+    }
+}
+```
+
+### Step 2: Rust Program
+
+Create the computation logic in Rust:
+
+```rust
+use enclave_sdk::prelude::*;
+
+#[enclave_main]
+fn main() {
+    // Initialize the enclave
+    let enclave = Enclave::new();
+
+    // Get the encrypted inputs
+    let inputs = enclave.get_inputs();
+
+    // Process votes (this happens in the secure enclave)
+    let mut vote_counts = std::collections::HashMap::new();
+    let mut total_votes = 0;
+
+    for input in inputs {
+        // Decrypt and process each vote
+        let vote = decrypt_vote(input);
+        *vote_counts.entry(vote.option).or_insert(0) += 1;
+        total_votes += 1;
+    }
+
+    // Return the results
+    let results = VoteResults {
+        total_votes,
+        vote_counts,
+    };
+
+    enclave.return_results(serde_json::to_vec(&results).unwrap());
+}
+
+fn decrypt_vote(encrypted_vote: Vec<u8>) -> Vote {
+    // Decryption logic would go here
+    // This is handled by the Ciphernode Committee
+    todo!("Implement vote decryption")
+}
+
+#[derive(Serialize)]
+struct VoteResults {
+    total_votes: u32,
+    vote_counts: std::collections::HashMap<u32, u32>,
+}
+
+#[derive(Deserialize)]
+struct Vote {
+    option: u32,
+    commitment: [u8; 32],
+}
+```
+
+### Step 3: Client Application
+
+Create a simple client to interact with the system:
+
+```typescript
+import { EnclaveClient } from "@enclave/sdk";
+
+async function main() {
+  // Initialize the client
+  const client = new EnclaveClient({
+    rpcUrl: "http://localhost:8545",
+    enclaveAddress: "0x...", // Deployed Enclave contract address
+  });
+
+  // Submit a computation request
+  const requestId = await client.requestComputation({
+    program: votingProgramAddress,
+    parameters: {
+      options: ["Option A", "Option B", "Option C"],
+      duration: 3600, // 1 hour
+    },
+  });
+
+  console.log("Computation requested:", requestId);
+
+  // Wait for results
+  const results = await client.waitForResults(requestId);
+  console.log("Voting results:", results);
+}
+
+main().catch(console.error);
+```
+
+### Step 4: Running the Example
+
+1. **Deploy the contracts**
+
+   ```bash
+   forge script script/Deploy.s.sol --rpc-url localhost --broadcast
+   ```
+
+2. **Start the Compute Provider**
+
+   ```bash
+   cargo run --bin compute-provider
+   ```
+
+3. **Run the client**
+   ```bash
+   npm run start
+   ```
+
+### What Happens
+
+1. The client submits a voting request to the Enclave contract
+2. A Ciphernode Committee is selected and generates encryption keys
+3. Users submit encrypted votes
+4. The Compute Provider processes the votes in a secure environment
+5. Results are decrypted and published
+6. The client retrieves the final voting results
+
+This example demonstrates the core privacy-preserving computation flow of Enclave.
+
+---
+
+## Installation
+
+This section covers the installation process for all Enclave components.
+
+### System Requirements
+
+- **Operating System**: Linux, macOS, or Windows
+- **Memory**: Minimum 8GB RAM (16GB recommended)
+- **Storage**: At least 10GB free space
+- **Network**: Stable internet connection
+
+### Prerequisites
+
+#### Node.js and pnpm
+
+```bash
+# Install Node.js (version 18 or higher)
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Install pnpm
+npm install -g pnpm
+```
+
+#### Rust Toolchain
+
+```bash
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# Install additional components
+rustup component add rustfmt clippy
+```
+
+#### Foundry (for smart contracts)
+
+```bash
+# Install Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
+# Verify installation
+forge --version
+cast --version
+```
+
+#### RISC Zero Toolchain (for zkVM)
+
+```bash
+# Install RISC Zero
+cargo install cargo-risczero
+cargo risczero install
+```
+
+### Installing Enclave
+
+#### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/gnosisguild/enclave.git
+cd enclave
+
+# Install dependencies
+pnpm install
+
+# Build the project
+cargo build --release
+```
+
+#### Using Package Managers
+
+**npm/pnpm:**
+
+```bash
+pnpm add @enclave/sdk @enclave/contracts
+```
+
+**Cargo:**
+
+```toml
+[dependencies]
+enclave-sdk = "0.1.0"
+enclave-contracts = "0.1.0"
+```
+
+### Verification
+
+Verify your installation:
+
+```bash
+# Check Rust components
+cargo --version
+forge --version
+
+# Check Node.js components
+node --version
+pnpm --version
+
+# Run tests
+cargo test
+forge test
+```
+
+### Docker Installation (Alternative)
+
+If you prefer using Docker:
+
+```bash
+# Pull the official image
+docker pull gnosisguild/enclave:latest
+
+# Run the container
+docker run -it gnosisguild/enclave:latest
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Rust installation fails**
+
+   - Ensure you have curl installed
+   - Check your internet connection
+   - Try using a different mirror
+
+2. **Foundry installation issues**
+
+   - Make sure you have the latest version of Rust
+   - Check that your PATH includes ~/.foundry/bin
+
+3. **Node.js version conflicts**
+
+   - Use a version manager like nvm
+   - Ensure you're using Node.js 18 or higher
+
+4. **Permission errors**
+   - Use sudo for system-wide installations
+   - Check file permissions in your home directory
+
+#### Getting Help
+
+- Check the [GitHub Issues](https://github.com/gnosisguild/enclave/issues)
+- Join our [Discord community](https://discord.gg/enclave)
+- Read the [documentation](https://docs.enclave.org)
+
+---
+
+## Introduction
+
+Enclave is a privacy-preserving computation protocol that enables secure, verifiable computation over encrypted data. Built on blockchain technology and zero-knowledge proofs, Enclave allows developers to create applications that protect user privacy while maintaining computational integrity.
+
+### What is Enclave?
+
+Enclave is a decentralized protocol that enables:
+
+- **Private Computation**: Process sensitive data without exposing it
+- **Verifiable Results**: Cryptographically prove computation correctness
+- **Decentralized Coordination**: No single point of failure or trust
+- **Flexible Architecture**: Support for various computation models
+
+### Key Features
+
+#### Privacy by Design
+
+- Data is encrypted before submission
+- Computation happens in secure environments
+- Only authorized parties can access results
+
+#### Verifiable Computation
+
+- Zero-knowledge proofs ensure correctness
+- Multiple verification mechanisms
+- Transparent audit trails
+
+#### Decentralized Architecture
+
+- No central authority
+- Distributed key management
+- Community-governed protocol
+
+#### Developer-Friendly
+
+- Simple APIs and SDKs
+- Comprehensive documentation
+- Rich tooling ecosystem
+
+### Use Cases
+
+#### Healthcare
+
+- Analyze patient data while preserving privacy
+- Collaborative research without data sharing
+- Secure medical record processing
+
+#### Finance
+
+- Private credit scoring
+- Fraud detection without exposing transactions
+- Cross-institutional data analysis
+
+#### Voting Systems
+
+- Secure electronic voting
+- Anonymous ballot counting
+- Transparent election verification
+
+#### Machine Learning
+
+- Train models on private datasets
+- Federated learning coordination
+- Privacy-preserving AI inference
+
+### How It Works
+
+Enclave uses a multi-layered approach to ensure privacy and verifiability:
+
+1. **Encryption**: Data is encrypted using threshold cryptography
+2. **Computation**: Processing happens in secure, isolated environments
+3. **Verification**: Results are cryptographically verified
+4. **Decryption**: Only authorized parties can access final results
+
+### Getting Started
+
+Ready to build with Enclave? Here's how to get started:
+
+1. **Learn the Basics**: Read the [Architecture Overview](#architecture-overview)
+2. **Set Up Your Environment**: Follow the [Installation Guide](#installation)
+3. **Build Your First App**: Try the [Hello World Tutorial](#hello-world-tutorial)
+4. **Explore Examples**: Check out the [CRISP Example](#crisp-example)
+
+### Community and Support
+
+- **Documentation**: [docs.enclave.org](https://docs.enclave.org)
+- **GitHub**: [github.com/gnosisguild/enclave](https://github.com/gnosisguild/enclave)
+- **Discord**: [discord.gg/enclave](https://discord.gg/enclave)
+- **Twitter**: [@enclave_protocol](https://twitter.com/enclave_protocol)
+
+---
+
+## What is E3
+
+E3 (Enclave Execution Environment) is the core computation framework within the Enclave protocol. It provides a secure, verifiable environment for executing privacy-preserving computations.
+
+### E3 Overview
+
+E3 is designed to:
+
+- Execute computations over encrypted data
+- Provide cryptographic guarantees of correctness
+- Support multiple computation models
+- Ensure privacy and security
+
+### E3 Components
+
+#### E3 Program (E3P)
+
+The E3 Program defines the computation logic:
+
+- Specifies what computation to perform
+- Defines input validation rules
+- Handles result formatting
+- Interfaces with the Enclave contract
+
+#### E3 Request
+
+An E3 Request initiates a computation:
+
+- Contains computation parameters
+- Specifies security requirements
+- Defines time constraints
+- Sets up the execution environment
+
+#### E3 Execution
+
+The execution process includes:
+
+- Input validation and encryption
+- Secure computation execution
+- Result generation and verification
+- Output decryption and publication
+
+### E3 Lifecycle
+
+1. **Request Creation**: A requester creates an E3 request
+2. **Committee Formation**: Ciphernodes form a committee
+3. **Key Generation**: Shared encryption keys are created
+4. **Input Submission**: Data providers submit encrypted inputs
+5. **Computation**: The E3 Program executes over encrypted data
+6. **Result Processing**: Results are decrypted and verified
+7. **Output Delivery**: Final results are made available
+
+### E3 Security Model
+
+#### Privacy Guarantees
+
+- Input data remains encrypted throughout computation
+- Only authorized parties can access results
+- No single party can decrypt data alone
+
+#### Verifiability
+
+- Computation correctness is cryptographically proven
+- Results can be independently verified
+- Audit trails are maintained
+
+#### Fault Tolerance
+
+- Multiple parties participate in key management
+- Threshold cryptography prevents single points of failure
+- Byzantine fault tolerance for committee operations
+
+### Building E3 Programs
+
+#### Program Structure
+
+```rust
+use enclave_sdk::prelude::*;
+
+#[enclave_main]
+fn main() {
+    let enclave = Enclave::new();
+
+    // Get inputs
+    let inputs = enclave.get_inputs();
+
+    // Process data
+    let results = process_data(inputs);
+
+    // Return results
+    enclave.return_results(results);
+}
+
+fn process_data(inputs: Vec<EncryptedInput>) -> Vec<u8> {
+    // Your computation logic here
+    todo!("Implement your computation")
+}
+```
+
+#### Input Validation
+
+```rust
+fn validate_input(input: &[u8]) -> bool {
+    // Validate input format and content
+    input.len() > 0 && input.len() < MAX_INPUT_SIZE
+}
+```
+
+#### Result Formatting
+
+```rust
+fn format_results(data: ComputationData) -> Vec<u8> {
+    serde_json::to_vec(&data).unwrap()
+}
+```
+
+### E3 Best Practices
+
+#### Security
+
+- Always validate inputs
+- Use secure random number generation
+- Implement proper error handling
+- Follow cryptographic best practices
+
+#### Performance
+
+- Optimize for the target execution environment
+- Minimize memory usage
+- Use efficient algorithms
+- Consider parallel processing
+
+#### Maintainability
+
+- Write clear, documented code
+- Use consistent naming conventions
+- Implement comprehensive testing
+- Follow Rust best practices
+
+---
+
+## Write E3 Contract
+
+This guide explains how to write smart contracts that integrate with the Enclave E3 system.
+
+### Contract Architecture
+
+E3 contracts follow a specific pattern to integrate with the Enclave protocol:
+
+```solidity
+// SPDX-License-Identifier: LGPL-3.0-only
+pragma solidity ^0.8.19;
+
+import "@enclave/contracts/Enclave.sol";
+import "@enclave/contracts/E3Program.sol";
+import "@enclave/contracts/InputValidator.sol";
+
+contract MyE3Program is E3Program {
+    // Contract state and logic
+}
+```
+
+### Core Interface Implementation
+
+#### E3Program Interface
+
+```solidity
+interface IE3Program {
+    function processComputation(bytes[] memory inputs) external returns (bytes memory);
+    function validateInput(bytes memory input) external pure returns (bool);
+    function getInputValidator() external view returns (IInputValidator);
+    function getEncryptionScheme() external view returns (bytes32);
+}
+```
+
+#### Required Functions
+
+```solidity
+contract MyE3Program is E3Program {
+    function processComputation(bytes[] memory inputs) external override returns (bytes memory) {
+        // This function is called by the Compute Provider
+        // It should return the computation results
+        return abi.encode(processInputs(inputs));
+    }
+
+    function validateInput(bytes memory input) external pure override returns (bool) {
+        // Validate input format and content
+        return input.length > 0 && input.length <= MAX_INPUT_SIZE;
+    }
+
+    function getInputValidator() external view override returns (IInputValidator) {
+        return inputValidator;
+    }
+
+    function getEncryptionScheme() external view override returns (bytes32) {
+        return encryptionScheme;
+    }
+}
+```
+
+### Input Validation
+
+#### Basic Validation
+
+```solidity
+function validateInput(bytes memory input) external pure override returns (bool) {
+    // Check input length
+    if (input.length == 0 || input.length > MAX_INPUT_SIZE) {
+        return false;
+    }
+
+    // Check input format
+    try this.decodeInput(input) returns (InputData memory) {
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function decodeInput(bytes memory input) external pure returns (InputData memory) {
+    return abi.decode(input, (InputData));
+}
+```
+
+#### Advanced Validation
+
+```solidity
+function validateInput(bytes memory input) external pure override returns (bool) {
+    try this.decodeInput(input) returns (InputData memory data) {
+        // Validate data fields
+        if (data.timestamp > block.timestamp) return false;
+        if (data.value < MIN_VALUE || data.value > MAX_VALUE) return false;
+        if (data.user == address(0)) return false;
+
+        // Validate signature if present
+        if (data.signature.length > 0) {
+            return verifySignature(data);
+        }
+
+        return true;
+    } catch {
+        return false;
+    }
+}
+```
+
+### Computation Logic
+
+#### Simple Processing
+
+```solidity
+function processComputation(bytes[] memory inputs) external override returns (bytes memory) {
+    uint256 result = 0;
+
+    for (uint256 i = 0; i < inputs.length; i++) {
+        InputData memory data = abi.decode(inputs[i], (InputData));
+        result += data.value;
+    }
+
+    return abi.encode(ComputationResult({
+        total: result,
+        count: inputs.length,
+        timestamp: block.timestamp
+    }));
+}
+```
+
+#### Complex Processing
+
+```solidity
+function processComputation(bytes[] memory inputs) external override returns (bytes memory) {
+    // Initialize processing state
+    ProcessingState memory state = ProcessingState({
+        totalValue: 0,
+        validInputs: 0,
+        errors: new string[](0)
+    });
+
+    // Process each input
+    for (uint256 i = 0; i < inputs.length; i++) {
+        try this.processInput(inputs[i]) returns (uint256 value) {
+            state.totalValue += value;
+            state.validInputs++;
+        } catch Error(string memory reason) {
+            state.errors.push(reason);
+        }
+    }
+
+    // Return results
+    return abi.encode(ProcessingResult({
+        totalValue: state.totalValue,
+        validInputs: state.validInputs,
+        errors: state.errors,
+        timestamp: block.timestamp
+    }));
+}
+```
+
+### Event Emission
+
+#### Standard Events
+
+```solidity
+event ComputationRequested(uint256 indexed e3Id, address indexed requester);
+event ComputationCompleted(uint256 indexed e3Id, bytes results);
+event ComputationFailed(uint256 indexed e3Id, string reason);
+```
+
+#### Custom Events
+
+```solidity
+event VoteSubmitted(uint256 indexed e3Id, address indexed voter, uint256 option);
+event ResultsPublished(uint256 indexed e3Id, uint256[] voteCounts);
+```
+
+### Error Handling
+
+#### Custom Errors
+
+```solidity
+error InvalidInput(string reason);
+error ComputationFailed(string reason);
+error UnauthorizedAccess(address caller);
+```
+
+#### Error Handling Pattern
+
+```solidity
+function processComputation(bytes[] memory inputs) external override returns (bytes memory) {
+    if (inputs.length == 0) {
+        revert InvalidInput("No inputs provided");
+    }
+
+    try this.validateAllInputs(inputs) {
+        return this.executeComputation(inputs);
+    } catch Error(string memory reason) {
+        emit ComputationFailed(e3Id, reason);
+        revert ComputationFailed(reason);
+    }
+}
+```
+
+### Security Considerations
+
+#### Access Control
+
+```solidity
+modifier onlyEnclave() {
+    require(msg.sender == address(enclave), "Only Enclave can call this");
+    _;
+}
+
+modifier onlyAuthorized() {
+    require(authorizedCallers[msg.sender], "Unauthorized caller");
+    _;
+}
+```
+
+#### Input Sanitization
+
+```solidity
+function sanitizeInput(bytes memory input) internal pure returns (bytes memory) {
+    // Remove any potentially malicious content
+    // Ensure input is within expected bounds
+    // Validate encoding
+    return input;
+}
+```
+
+#### Reentrancy Protection
+
+```solidity
+bool private locked;
+
+modifier noReentrancy() {
+    require(!locked, "Reentrancy detected");
+    locked = true;
+    _;
+    locked = false;
+}
+```
+
+### Testing
+
+#### Unit Tests
+
+```solidity
+function testValidateInput() public {
+    bytes memory validInput = abi.encode(InputData({
+        value: 100,
+        timestamp: block.timestamp,
+        user: address(this)
+    }));
+
+    assertTrue(program.validateInput(validInput));
+}
+
+function testProcessComputation() public {
+    bytes[] memory inputs = new bytes[](2);
+    inputs[0] = abi.encode(InputData({value: 100, timestamp: block.timestamp, user: address(this)}));
+    inputs[1] = abi.encode(InputData({value: 200, timestamp: block.timestamp, user: address(this)}));
+
+    bytes memory result = program.processComputation(inputs);
+    ComputationResult memory decoded = abi.decode(result, (ComputationResult));
+
+    assertEq(decoded.totalValue, 300);
+    assertEq(decoded.validInputs, 2);
+}
+```
+
+### Deployment
+
+#### Constructor
+
+```solidity
+constructor(
+    address _enclave,
+    address _inputValidator,
+    bytes32 _encryptionScheme
+) {
+    enclave = IEnclave(_enclave);
+    inputValidator = IInputValidator(_inputValidator);
+    encryptionScheme = _encryptionScheme;
+}
+```
+
+#### Deployment Script
+
+```solidity
+// SPDX-License-Identifier: LGPL-3.0-only
+pragma solidity ^0.8.19;
+
+import "forge-std/Script.sol";
+import "../src/MyE3Program.sol";
+
+contract DeployMyE3Program is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        MyE3Program program = new MyE3Program(
+            address(enclave),
+            address(inputValidator),
+            encryptionScheme
+        );
+
+        vm.stopBroadcast();
+
+        console.log("MyE3Program deployed at:", address(program));
+    }
+}
+```
+
+---
+
+## Write Secure Program
+
+This guide covers best practices for writing secure E3 Programs that protect user privacy and ensure computational integrity.
+
+### Security Principles
+
+#### Privacy First
+
+- Never expose raw input data
+- Use encryption for all sensitive operations
+- Implement proper access controls
+- Minimize data retention
+
+#### Verifiability
+
+- Generate cryptographic proofs
+- Implement audit trails
+- Use deterministic algorithms
+- Validate all inputs and outputs
+
+#### Fault Tolerance
+
+- Handle errors gracefully
+- Implement circuit breakers
+- Use timeouts and limits
+- Provide fallback mechanisms
+
+### Input Validation
+
+#### Comprehensive Validation
+
+```rust
+use enclave_sdk::prelude::*;
+
+fn validate_input(input: &[u8]) -> Result<ValidatedInput, ValidationError> {
+    // Check input size
+    if input.len() == 0 {
+        return Err(ValidationError::EmptyInput);
+    }
+
+    if input.len() > MAX_INPUT_SIZE {
+        return Err(ValidationError::InputTooLarge);
+    }
+
+    // Parse and validate structure
+    let data: InputData = serde_json::from_slice(input)
+        .map_err(|_| ValidationError::InvalidFormat)?;
+
+    // Validate fields
+    if data.timestamp > get_current_timestamp() {
+        return Err(ValidationError::FutureTimestamp);
+    }
+
+    if data.value < MIN_VALUE || data.value > MAX_VALUE {
+        return Err(ValidationError::ValueOutOfRange);
+    }
+
+    // Validate signature if present
+    if let Some(signature) = &data.signature {
+        if !verify_signature(&data, signature) {
+            return Err(ValidationError::InvalidSignature);
+        }
+    }
+
+    Ok(ValidatedInput::new(data))
+}
+```
+
+#### Rate Limiting
+
+```rust
+use std::collections::HashMap;
+use std::time::{Duration, Instant};
+
+struct RateLimiter {
+    requests: HashMap<String, Vec<Instant>>,
+    limit: usize,
+    window: Duration,
+}
+
+impl RateLimiter {
+    fn new(limit: usize, window: Duration) -> Self {
+        Self {
+            requests: HashMap::new(),
+            limit,
+            window,
+        }
+    }
+
+    fn check_rate_limit(&mut self, identifier: &str) -> bool {
+        let now = Instant::now();
+        let requests = self.requests.entry(identifier.to_string()).or_insert_with(Vec::new);
+
+        // Remove old requests
+        requests.retain(|&time| now.duration_since(time) < self.window);
+
+        // Check if under limit
+        if requests.len() >= self.limit {
+            return false;
+        }
+
+        // Add current request
+        requests.push(now);
+        true
+    }
+}
+```
+
+### Secure Computation
+
+#### Constant-Time Operations
+
+```rust
+use subtle::{Choice, ConstantTimeEq};
+
+fn secure_compare(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+
+    let mut result = Choice::from(1);
+    for (x, y) in a.iter().zip(b.iter()) {
+        result &= x.ct_eq(y);
+    }
+
+    result.into()
+}
+
+fn secure_select<T: Copy>(condition: bool, a: T, b: T) -> T {
+    let choice = Choice::from(condition as u8);
+    choice.select(&a, &b)
+}
+```
+
+#### Memory Safety
+
+```rust
+use zeroize::{Zeroize, ZeroizeOnDrop};
+
+#[derive(Zeroize, ZeroizeOnDrop)]
+struct SensitiveData {
+    secret: Vec<u8>,
+    key: [u8; 32],
+}
+
+impl SensitiveData {
+    fn new(secret: Vec<u8>, key: [u8; 32]) -> Self {
+        Self { secret, key }
+    }
+
+    fn process(&mut self) -> Result<Vec<u8>, ProcessingError> {
+        // Process the sensitive data
+        let result = self.perform_computation()?;
+
+        // Clear sensitive data
+        self.zeroize();
+
+        Ok(result)
+    }
+}
+```
+
+### Cryptographic Operations
+
+#### Secure Random Generation
+
+```rust
+use rand::{CryptoRng, RngCore};
+
+fn generate_secure_random<T: CryptoRng + RngCore>(rng: &mut T, size: usize) -> Vec<u8> {
+    let mut bytes = vec![0u8; size];
+    rng.fill_bytes(&mut bytes);
+    bytes
+}
+
+fn generate_nonce<T: CryptoRng + RngCore>(rng: &mut T) -> [u8; 12] {
+    let mut nonce = [0u8; 12];
+    rng.fill_bytes(&mut nonce);
+    nonce
+}
+```
+
+#### Hash Functions
+
+```rust
+use sha2::{Sha256, Digest};
+
+fn secure_hash(data: &[u8]) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    hasher.finalize().into()
+}
+
+fn hmac_verify(key: &[u8], message: &[u8], signature: &[u8]) -> bool {
+    use hmac::{Hmac, Mac};
+
+    let mut mac = Hmac::<Sha256>::new_from_slice(key)
+        .expect("HMAC can take key of any size");
+    mac.update(message);
+
+    mac.verify_slice(signature).is_ok()
+}
+```
+
+### Error Handling
+
+#### Secure Error Messages
+
+```rust
+#[derive(Debug, thiserror::Error)]
+pub enum SecureError {
+    #[error("Invalid input")]
+    InvalidInput,
+    #[error("Computation failed")]
+    ComputationFailed,
+    #[error("Authentication failed")]
+    AuthenticationFailed,
+    // Don't expose internal details
+}
+
+impl SecureError {
+    fn to_public_message(&self) -> &'static str {
+        match self {
+            SecureError::InvalidInput => "Invalid input provided",
+            SecureError::ComputationFailed => "Computation could not be completed",
+            SecureError::AuthenticationFailed => "Authentication failed",
+        }
+    }
+}
+```
+
+#### Logging Security
+
+```rust
+use log::{info, warn, error};
+
+fn log_securely(level: LogLevel, message: &str, sensitive_data: Option<&[u8]>) {
+    match level {
+        LogLevel::Info => {
+            if let Some(data) = sensitive_data {
+                info!("{} [data: {} bytes]", message, data.len());
+            } else {
+                info!("{}", message);
+            }
+        }
+        LogLevel::Warning => {
+            warn!("{}", message);
+        }
+        LogLevel::Error => {
+            error!("{}", message);
+        }
+    }
+}
+```
+
+### Access Control
+
+#### Role-Based Access
+
+```rust
+use std::collections::HashSet;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Role {
+    Admin,
+    User,
+    Viewer,
+}
+
+pub struct AccessControl {
+    roles: HashMap<String, HashSet<Role>>,
+    permissions: HashMap<Role, HashSet<Permission>>,
+}
+
+impl AccessControl {
+    pub fn check_permission(&self, user: &str, permission: Permission) -> bool {
+        if let Some(user_roles) = self.roles.get(user) {
+            for role in user_roles {
+                if let Some(role_permissions) = self.permissions.get(role) {
+                    if role_permissions.contains(&permission) {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+}
+```
+
+#### Time-Based Access
+
+```rust
+use std::time::{SystemTime, UNIX_EPOCH};
+
+pub struct TimeBasedAccess {
+    start_time: u64,
+    end_time: u64,
+}
+
+impl TimeBasedAccess {
+    pub fn new(start_time: u64, duration_seconds: u64) -> Self {
+        Self {
+            start_time,
+            end_time: start_time + duration_seconds,
+        }
+    }
+
+    pub fn is_access_allowed(&self) -> bool {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        now >= self.start_time && now <= self.end_time
+    }
+}
+```
+
+### Testing Security
+
+#### Security Tests
+
+```rust
+#[cfg(test)]
+mod security_tests {
+    use super::*;
+
+    #[test]
+    fn test_input_validation_security() {
+        // Test with malicious inputs
+        let malicious_inputs = vec![
+            vec![], // Empty input
+            vec![0u8; MAX_INPUT_SIZE + 1], // Too large
+            b"<script>alert('xss')</script>".to_vec(), // XSS attempt
+            b"'; DROP TABLE users; --".to_vec(), // SQL injection attempt
+        ];
+
+        for input in malicious_inputs {
+            assert!(validate_input(&input).is_err());
+        }
+    }
+
+    #[test]
+    fn test_timing_attack_resistance() {
+        let input1 = b"correct_password";
+        let input2 = b"wrong_password";
+
+        let start = Instant::now();
+        validate_input(input1);
+        let time1 = start.elapsed();
+
+        let start = Instant::now();
+        validate_input(input2);
+        let time2 = start.elapsed();
+
+        // Times should be similar (within 10% tolerance)
+        let diff = (time1.as_nanos() as f64 - time2.as_nanos() as f64).abs();
+        let avg = (time1.as_nanos() + time2.as_nanos()) as f64 / 2.0;
+        assert!(diff / avg < 0.1);
+    }
+}
+```
+
+#### Fuzz Testing
+
+```rust
+use proptest::prelude::*;
+
+proptest! {
+    #[test]
+    fn test_arbitrary_input_validation(input in any::<Vec<u8>>()) {
+        let result = validate_input(&input);
+
+        // Result should be consistent
+        let result2 = validate_input(&input);
+        assert_eq!(result.is_ok(), result2.is_ok());
+
+        // If valid, should be processable
+        if let Ok(validated) = result {
+            assert!(process_input(validated).is_ok());
+        }
+    }
+}
+```
+
+### Performance Considerations
+
+#### Memory Management
+
+```rust
+use std::alloc::{GlobalAlloc, Layout, System};
+
+struct SecureAllocator;
+
+unsafe impl GlobalAlloc for SecureAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        System.alloc(layout)
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        // Zero out memory before deallocating
+        std::ptr::write_bytes(ptr, 0, layout.size());
+        System.dealloc(ptr, layout);
+    }
+}
+
+#[global_allocator]
+static GLOBAL: SecureAllocator = SecureAllocator;
+```
+
+#### Resource Limits
+
+```rust
+pub struct ResourceLimits {
+    max_memory: usize,
+    max_cpu_time: Duration,
+    max_inputs: usize,
+}
+
+impl ResourceLimits {
+    pub fn check_memory_usage(&self, current: usize) -> Result<(), ResourceError> {
+        if current > self.max_memory {
+            Err(ResourceError::MemoryLimitExceeded)
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn check_cpu_time(&self, start: Instant) -> Result<(), ResourceError> {
+        if start.elapsed() > self.max_cpu_time {
+            Err(ResourceError::CpuTimeLimitExceeded)
+        } else {
+            Ok(())
+        }
+    }
+}
+```
+
+---
+
+## CRISP Example
+
+CRISP (Cryptographically Secure and Private) is a complete example implementation of a privacy-preserving voting system built on Enclave. It demonstrates all the core concepts and components of the Enclave protocol.
+
+### Why CRISP?
+
+CRISP serves as a comprehensive example that showcases:
+
+- **Privacy-Preserving Voting**: Votes are encrypted and processed without revealing individual choices
+- **Verifiable Results**: Cryptographic proofs ensure the integrity of the voting process
+- **Decentralized Coordination**: No central authority controls the voting system
+- **Real-World Application**: A practical use case that demonstrates Enclave's capabilities
+
+### Project Structure
+
+CRISP is organized into several key components:
+
+#### **Client Application** (`/client`)
+
+- React-based web interface
+- User registration and authentication
+- Vote submission interface
+- Real-time result display
+- Integration with MetaMask for blockchain interactions
+
+#### **Coordination Server** (`/server`)
+
+- Node.js/Express backend
+- Manages voting sessions and user data
+- Coordinates with the Enclave protocol
+- Handles authentication and session management
+- Provides API endpoints for the client
+
+#### **ZK Program** (`/program`)
+
+- Rust-based zero-knowledge program
+- Processes encrypted votes
+- Generates cryptographic proofs
+- Runs in the RISC Zero zkVM
+- Ensures privacy and verifiability
+
+#### **Smart Contracts** (`/contracts`)
+
+- Solidity contracts for the voting system
+- Integration with Enclave protocol
+- Vote validation and result publication
+- Event emission for off-chain coordination
+
+##### **CRISPProgram.sol**
+
+Main program contract that defines the voting logic and interfaces with Enclave.
+
+##### **CRISPInputValidator.sol**
+
+Validates vote submissions and ensures they meet the voting requirements.
+
+##### **CRISPVerifier.sol**
+
+Verifies the cryptographic proofs generated by the ZK program.
+
+##### **CRISPPolicy.sol**
+
+Defines voting policies, eligibility criteria, and result validation rules.
+
+##### **CRISPChecker.sol**
+
+Implements additional checks and validations for the voting process.
+
+### Key Features
+
+#### Privacy Protection
+
+- Votes are encrypted before submission
+- Individual vote choices are never revealed
+- Only aggregate results are published
+- Cryptographic guarantees protect voter privacy
+
+#### Verifiability
+
+- Zero-knowledge proofs ensure computation correctness
+- Voters can verify their votes were counted
+- Anyone can verify the final results
+- Transparent audit trail of the voting process
+
+#### Security
+
+- Threshold cryptography prevents single points of failure
+- Byzantine fault tolerance for committee operations
+- Protection against various attack vectors
+- Secure key management and distribution
+
+#### Usability
+
+- Intuitive web interface
+- Mobile-responsive design
+- Real-time updates and notifications
+- Clear result visualization
+
+### Technical Implementation
+
+#### Vote Encryption
+
+```typescript
+async function encryptVote(vote: number, publicKey: string): Promise<string> {
+  // Encrypt vote using the committee's public key
+  const encryptedVote = await encrypt(JSON.stringify({ vote }), publicKey);
+  return encryptedVote;
+}
+```
+
+#### ZK Proof Generation
+
+```rust
+#[enclave_main]
+fn main() {
+    let enclave = Enclave::new();
+    let inputs = enclave.get_inputs();
+
+    // Process encrypted votes
+    let mut vote_counts = HashMap::new();
+    for input in inputs {
+        let vote = decrypt_vote(input);
+        *vote_counts.entry(vote.option).or_insert(0) += 1;
+    }
+
+    // Generate proof of correct computation
+    let proof = generate_proof(&vote_counts);
+
+    // Return results with proof
+    let results = VoteResults {
+        counts: vote_counts,
+        proof,
+    };
+
+    enclave.return_results(serde_json::to_vec(&results).unwrap());
+}
+```
+
+#### Result Verification
+
+```solidity
+function verifyResults(
+    uint256[] memory voteCounts,
+    bytes memory proof
+) external view returns (bool) {
+    return verifier.verifyProof(voteCounts, proof);
+}
+```
+
+### Getting Started with CRISP
+
+#### Prerequisites
+
+- Node.js 18+
+- Rust toolchain
+- Foundry for smart contracts
+- MetaMask browser extension
+
+#### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/gnosisguild/enclave.git
+cd enclave/examples/CRISP
+
+# Install dependencies
+pnpm install
+
+# Build contracts
+forge build
+
+# Build Rust program
+cargo build --release
+```
+
+#### Running CRISP
+
+```bash
+# Start the development environment
+pnpm run dev
+
+# Deploy contracts
+forge script script/Deploy.s.sol --rpc-url localhost --broadcast
+
+# Start the coordination server
+pnpm run server
+
+# Start the client application
+pnpm run client
+```
+
+### Use Cases
+
+CRISP can be adapted for various voting scenarios:
+
+#### Organizational Voting
+
+- Board elections
+- Policy decisions
+- Budget allocations
+- Strategic planning
+
+#### Community Governance
+
+- DAO proposals
+- Protocol upgrades
+- Parameter changes
+- Community initiatives
+
+#### Research and Surveys
+
+- Academic research
+- Market surveys
+- Opinion polling
+- Data collection
+
+#### Educational Purposes
+
+- Student elections
+- Course evaluations
+- Research studies
+- Learning demonstrations
+
+### Security Considerations
+
+#### Threat Model
+
+- Malicious voters attempting to submit invalid votes
+- Compromised committee members
+- Network attacks and censorship
+- Smart contract vulnerabilities
+
+#### Mitigation Strategies
+
+- Input validation and sanitization
+- Threshold cryptography for key management
+- Cryptographic proofs for verification
+- Regular security audits and testing
+
+### Future Enhancements
+
+#### Planned Features
+
+- Support for ranked-choice voting
+- Multi-round voting capabilities
+- Advanced result visualization
+- Integration with more blockchain networks
+
+#### Research Areas
+
+- Improved zero-knowledge proof systems
+- Enhanced privacy guarantees
+- Better scalability solutions
+- Cross-chain compatibility
+
+---
+
+## White Paper
+
+The Enclave Protocol White Paper provides a comprehensive technical overview of the protocol's design, security model, and implementation details.
+
+### Abstract
+
+Enclave is a decentralized protocol that enables privacy-preserving computation over encrypted data. By combining threshold cryptography, zero-knowledge proofs, and blockchain technology, Enclave provides a secure, verifiable, and privacy-preserving platform for distributed computation.
+
+### Introduction
+
+In today's digital world, the need for privacy-preserving computation has become increasingly important. Traditional approaches to secure computation either require trusted third parties or suffer from scalability limitations. Enclave addresses these challenges by providing a decentralized, scalable, and secure solution for privacy-preserving computation.
+
+### Problem Statement
+
+#### Current Limitations
+
+- **Trust Requirements**: Existing solutions often require trusted third parties
+- **Scalability Issues**: Many privacy-preserving computation systems have limited scalability
+- **Complexity**: Current solutions are often complex and difficult to implement
+- **Cost**: Privacy-preserving computation can be expensive and resource-intensive
+
+#### Use Cases
+
+- Healthcare data analysis
+- Financial computation
+- Voting systems
+- Machine learning on private data
+- Cross-institutional collaboration
+
+### Technical Overview
+
+#### Architecture
+
+Enclave uses a multi-layered architecture consisting of:
+
+1. **Smart Contract Layer**: Manages computation requests and coordination
+2. **Cryptographic Layer**: Handles encryption, decryption, and key management
+3. **Computation Layer**: Executes privacy-preserving computations
+4. **Verification Layer**: Provides cryptographic proofs of correctness
+
+#### Key Components
+
+##### Ciphernode Network
+
+- Distributed network of cryptographic service providers
+- Threshold cryptography for key management
+- Byzantine fault tolerance
+- Economic incentives for participation
+
+##### Compute Providers
+
+- Execute computations over encrypted data
+- Support for multiple computation models
+- Verifiable computation capabilities
+- Flexible deployment options
+
+##### Smart Contracts
+
+- Coordinate computation requests
+- Manage cryptographic keys
+- Validate computation results
+- Emit events for off-chain services
+
+### Security Model
+
+#### Privacy Guarantees
+
+- **Input Privacy**: Input data remains encrypted throughout computation
+- **Output Privacy**: Only authorized parties can access results
+- **Process Privacy**: Computation process is not observable
+- **Metadata Privacy**: Limited information leakage about computation
+
+#### Verifiability
+
+- **Computation Correctness**: Cryptographic proofs ensure correct execution
+- **Input Integrity**: Merkle trees verify input authenticity
+- **Result Validity**: Multiple verification mechanisms
+- **Audit Trails**: Transparent record of all operations
+
+#### Fault Tolerance
+
+- **Byzantine Fault Tolerance**: System remains secure with malicious participants
+- **Threshold Security**: No single point of failure
+- **Economic Security**: Economic incentives ensure honest behavior
+- **Network Resilience**: Distributed architecture prevents single points of failure
+
+### Cryptographic Primitives
+
+#### Threshold Cryptography
+
+- **Distributed Key Generation**: Multiple parties generate shared keys
+- **Threshold Decryption**: Requires threshold number of parties to decrypt
+- **Key Refresh**: Regular key updates for enhanced security
+- **Verifiable Secret Sharing**: Cryptographic proofs of key shares
+
+#### Zero-Knowledge Proofs
+
+- **Computation Proofs**: Prove correct execution of computations
+- **Input Validation**: Verify input format and constraints
+- **Result Verification**: Confirm computation results
+- **Privacy Preservation**: Hide sensitive computation details
+
+#### Hash Functions and Commitments
+
+- **Merkle Trees**: Efficient verification of large datasets
+- **Commitment Schemes**: Hide data while allowing verification
+- **Hash Chains**: Ensure data integrity and ordering
+- **Bloom Filters**: Efficient membership testing
+
+### Protocol Flow
+
+#### Request Phase
+
+1. Requester submits computation request
+2. System validates request parameters
+3. Ciphernode committee is selected
+4. Encryption keys are generated
+
+#### Execution Phase
+
+1. Data providers submit encrypted inputs
+2. Compute provider processes encrypted data
+3. Cryptographic proofs are generated
+4. Results are encrypted and submitted
+
+#### Verification Phase
+
+1. Committee decrypts computation results
+2. Proofs are verified
+3. Results are published
+4. Requester retrieves final results
+
+### Implementation Details
+
+#### Smart Contract Architecture
+
+```solidity
+contract Enclave {
+    // Core state variables
+    mapping(uint256 => E3) public e3s;
+    mapping(uint256 => LeanIMTData) public inputs;
+    mapping(bytes32 => IDecryptionVerifier) public decryptionVerifiers;
+
+    // Key functions
+    function request(...) external payable;
+    function activate(uint256 e3Id, bytes memory publicKey) external;
+    function publishInput(...) external;
+    function publishResult(...) external;
+}
+```
+
+#### Cryptographic Operations
+
+```rust
+// Threshold key generation
+fn generate_threshold_keys(threshold: u32, total: u32) -> (PublicKey, Vec<SecretShare>) {
+    let (public_key, secret_shares) = threshold_crypto::keygen(threshold, total);
+    (public_key, secret_shares)
+}
+
+// Secure computation
+fn compute_over_encrypted_data(encrypted_inputs: Vec<EncryptedData>) -> EncryptedResult {
+    let mut result = EncryptedResult::new();
+    for input in encrypted_inputs {
+        result = result.combine(process_input(input));
+    }
+    result
+}
+```
+
+### Performance Analysis
+
+#### Scalability
+
+- **Throughput**: Support for high-volume computations
+- **Latency**: Optimized for low-latency applications
+- **Cost**: Efficient resource utilization
+- **Network**: Minimal network overhead
+
+#### Benchmarks
+
+- **Key Generation**: ~100ms for 10-party threshold
+- **Computation**: Varies by complexity
+- **Verification**: ~50ms for standard proofs
+- **Decryption**: ~200ms for threshold decryption
+
+### Security Analysis
+
+#### Threat Model
+
+- **Malicious Participants**: Byzantine fault tolerance
+- **Network Attacks**: Cryptographic protection
+- **Smart Contract Vulnerabilities**: Formal verification
+- **Side-Channel Attacks**: Constant-time implementations
+
+#### Security Guarantees
+
+- **Privacy**: Information-theoretic privacy
+- **Correctness**: Cryptographic verification
+- **Availability**: Fault-tolerant design
+- **Integrity**: Cryptographic integrity protection
+
+### Future Work
+
+#### Research Directions
+
+- **Improved Efficiency**: Better algorithms and implementations
+- **Enhanced Privacy**: Stronger privacy guarantees
+- **Scalability**: Support for larger computations
+- **Interoperability**: Cross-chain and cross-protocol support
+
+#### Development Roadmap
+
+- **Phase 1**: Core protocol implementation
+- **Phase 2**: Advanced features and optimizations
+- **Phase 3**: Ecosystem development and integrations
+- **Phase 4**: Production deployment and scaling
+
+### Conclusion
+
+Enclave provides a comprehensive solution for privacy-preserving computation that addresses the key challenges of trust, scalability, and security. By combining advanced cryptographic techniques with blockchain technology, Enclave enables a new class of privacy-preserving applications while maintaining the security and verifiability guarantees required for production use.
+
+The protocol's modular design allows for flexible deployment and customization, making it suitable for a wide range of applications and use cases. As the ecosystem continues to develop, Enclave will play a crucial role in enabling privacy-preserving computation at scale.
+
+---
+
+_This documentation is optimized for LLM consumption and development tools like Cursor. It focuses on the essential information needed to understand and work with the Enclave Protocol while removing unnecessary configuration files, styling components, and redundant content._
