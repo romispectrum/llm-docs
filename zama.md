@@ -1,6 +1,4 @@
-# Combined Documentation
-
-_Source directory:_ `/Users/roman/Desktop/romi/zamaDocs/docs`
+# Zama FHEVM
 
 ## Table of Contents
 
@@ -10522,3 +10520,4 @@ Higher-precision integer types are available in the `TFHE-rs` library and can be
 ---
 
 _End of combined file._
+
